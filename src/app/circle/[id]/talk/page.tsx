@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useCircleStore } from "@/store/useCircleStore";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -18,7 +18,7 @@ import Link from "next/link";
 import QuestionCard from "@/components/QuestionCard";
 import SpeakerSpotlight from "@/components/SpeakerSpotlight";
 import Timer from "@/components/Timer";
-import { MoodReaction, Question } from "@/types";
+import { MoodReaction, Question, User } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 import { getDifficultyForRound } from "@/data/questions";
 
@@ -30,8 +30,9 @@ export default function TalkModePage() {
   const circleId = params.id as string;
 
   const {
-    getCircle,
+    currentCircle,
     currentUser,
+    loadCircle,
     finishAnswer,
     skipUser,
     addReaction,
@@ -40,15 +41,32 @@ export default function TalkModePage() {
     endGame,
   } = useCircleStore();
 
-  const circle = getCircle(circleId);
-
   const [phase, setPhase] = useState<TalkPhase>("playing");
   const [userQuestion, setUserQuestion] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [questionSource, setQuestionSource] = useState<"user" | "ai" | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function init() {
+      if (circleId && currentCircle?.id !== circleId) {
+        await loadCircle(circleId);
+      }
+      setIsLoading(false);
+    }
+    init();
+  }, [circleId, currentCircle?.id, loadCircle]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-gray-400 animate-pulse">กำลังโหลดข้อมูลเกม...</div>
+      </div>
+    );
+  }
 
   // Not found / not joined guard
-  if (!circle || !currentUser) {
+  if (!currentCircle || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
@@ -65,7 +83,7 @@ export default function TalkModePage() {
     );
   }
 
-  const currentRound = circle.rounds[circle.currentRoundIndex];
+  const currentRound = currentCircle.rounds[currentCircle.currentRoundIndex];
   if (!currentRound) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -90,42 +108,42 @@ export default function TalkModePage() {
     roundNumber,
   } = currentRound;
 
-  const isRoundComplete = answeredUsers.length === circle.participants.length;
+  const isRoundComplete = answeredUsers.length === currentCircle.participants.length;
   const currentSpeakerIndex = answeredUsers.length;
   const currentSpeakerId = answerOrder[currentSpeakerIndex];
-  const currentSpeaker = circle.participants.find((p) => p.id === currentSpeakerId);
+  const currentSpeaker = currentCircle.participants.find((p: User) => p.id === currentSpeakerId);
 
   // The first answerer of this round will create next question
   const questionCreatorId = answerOrder[0];
-  const questionCreator = circle.participants.find((p) => p.id === questionCreatorId);
+  const questionCreator = currentCircle.participants.find((p: User) => p.id === questionCreatorId);
   const isQuestionCreator = currentUser.id === questionCreatorId;
 
   // Check if current user is the active speaker
   const isCurrentSpeaker = currentUser.id === currentSpeakerId;
 
-  const handleFinishAnswer = () => {
+  const handleFinishAnswer = async () => {
     if (!currentSpeakerId) return;
-    finishAnswer(circleId, currentSpeakerId);
+    await finishAnswer(currentSpeakerId);
 
     // Check if round is now complete after this answer
     const newAnsweredCount = answeredUsers.length + 1;
-    if (newAnsweredCount >= circle.participants.length) {
-      setPhase("round-end");
+    if (newAnsweredCount >= currentCircle.participants.length) {
+      handleNextRound();
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
     if (!currentSpeakerId) return;
-    skipUser(circleId, currentSpeakerId);
+    await skipUser(currentSpeakerId);
 
     const newAnsweredCount = answeredUsers.length + 1;
-    if (newAnsweredCount >= circle.participants.length) {
-      setPhase("round-end");
+    if (newAnsweredCount >= currentCircle.participants.length) {
+      handleNextRound();
     }
   };
 
-  const handleReaction = (emoji: MoodReaction) => {
-    addReaction(circleId, circle.currentRoundIndex, emoji);
+  const handleReaction = async (emoji: MoodReaction) => {
+    await addReaction(currentCircle.currentRoundIndex, emoji);
   };
 
   const handleNextRound = () => {
@@ -134,16 +152,16 @@ export default function TalkModePage() {
     setUserQuestion("");
   };
 
-  const handleSubmitUserQuestion = () => {
+  const handleSubmitUserQuestion = async () => {
     if (!userQuestion.trim()) return;
     const newQuestion: Question = {
       id: uuidv4(),
       text: userQuestion.trim(),
-      category: circle.category,
+      category: currentCircle.category,
       difficulty: getDifficultyForRound(roundNumber + 1),
       createdBy: "user",
     };
-    startNewRound(circleId, newQuestion);
+    await startNewRound(newQuestion);
     setPhase("playing");
     setUserQuestion("");
     setQuestionSource(null);
@@ -157,7 +175,7 @@ export default function TalkModePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          category: circle.customCategory || circle.category,
+          category: currentCircle.customCategory || currentCircle.category,
           difficulty,
         }),
       });
@@ -166,43 +184,43 @@ export default function TalkModePage() {
         const newQuestion: Question = {
           id: uuidv4(),
           text: data.question,
-          category: circle.category,
+          category: currentCircle.category,
           difficulty,
           createdBy: "ai",
         };
-        startNewRound(circleId, newQuestion);
+        await startNewRound(newQuestion);
         setPhase("playing");
       } else {
         // Fallback to random
-        handleRandomQuestion();
+        await handleRandomQuestion();
       }
     } catch {
       // Fallback to random question from pool
-      handleRandomQuestion();
+      await handleRandomQuestion();
     } finally {
       setAiLoading(false);
       setQuestionSource(null);
     }
   };
 
-  const handleRandomQuestion = () => {
-    const q = getRandomQuestion(circleId);
+  const handleRandomQuestion = async () => {
+    const q = getRandomQuestion();
     if (q) {
-      startNewRound(circleId, q);
+      await startNewRound(q);
       setPhase("playing");
     }
     setQuestionSource(null);
   };
 
-  const handleEndGame = () => {
-    endGame(circleId);
+  const handleEndGame = async () => {
+    await endGame();
     setPhase("finished");
   };
 
   // ========== RENDER ==========
 
   // Finished state
-  if (phase === "finished" || circle.status === "finished") {
+  if (phase === "finished" || currentCircle.status === "finished") {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10">
         <motion.div
@@ -216,7 +234,7 @@ export default function TalkModePage() {
             </div>
             <h2 className="text-3xl font-bold text-white mb-2">จบเกม!</h2>
             <p className="text-gray-400 mb-6">
-              วง &quot;{circle.name}&quot; เล่นทั้งหมด {circle.rounds.length} รอบ
+              วง &quot;{currentCircle.name}&quot; เล่นทั้งหมด {currentCircle.rounds.length} รอบ
             </p>
 
             {/* Summary */}
@@ -225,16 +243,16 @@ export default function TalkModePage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">จำนวนรอบ</span>
-                  <span className="text-white font-medium">{circle.rounds.length}</span>
+                  <span className="text-white font-medium">{currentCircle.rounds.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">ผู้เข้าร่วม</span>
-                  <span className="text-white font-medium">{circle.participants.length} คน</span>
+                  <span className="text-white font-medium">{currentCircle.participants.length} คน</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">หัวข้อ</span>
                   <span className="text-white font-medium capitalize">
-                    {circle.customCategory || circle.category}
+                    {currentCircle.customCategory || currentCircle.category}
                   </span>
                 </div>
               </div>
@@ -274,9 +292,19 @@ export default function TalkModePage() {
   }
 
   // Create question phase
-  if (phase === "create-question") {
+  if (phase === "create-question" || isRoundComplete) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative">
+        {currentUser.id === currentCircle.hostId && (
+          <div className="absolute top-6 right-6 z-20">
+            <button
+              onClick={handleEndGame}
+              className="px-4 py-2 rounded-xl bg-red-500/10 text-red-500 font-medium border border-red-500/20 hover:bg-red-500/20 transition-colors text-sm"
+            >
+              จบเกม
+            </button>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent pointer-events-none" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -410,83 +438,21 @@ export default function TalkModePage() {
     );
   }
 
-  // Round end phase
-  if (phase === "round-end" || isRoundComplete) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent pointer-events-none" />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md relative z-10"
-        >
-          <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-8 text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", delay: 0.2 }}
-              className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center"
-            >
-              <span className="text-3xl">✅</span>
-            </motion.div>
 
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Round {roundNumber} จบแล้ว!
-            </h2>
-            <p className="text-gray-400 mb-6">
-              ทุกคนตอบครบแล้ว
-            </p>
-
-            {/* Question recap */}
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 mb-6 text-left">
-              <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">
-                คำถามรอบนี้
-              </p>
-              <p className="text-gray-200 font-medium">
-                &ldquo;{question.text}&rdquo;
-              </p>
-            </div>
-
-            {/* Answered by */}
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              {answerOrder.map((userId) => {
-                const user = circle.participants.find((p) => p.id === userId);
-                return (
-                  <span
-                    key={userId}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm"
-                  >
-                    ✓ {user?.name}
-                  </span>
-                );
-              })}
-            </div>
-
-            <div className="space-y-3">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleNextRound}
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-lg shadow-lg shadow-purple-500/25"
-              >
-                รอบถัดไป →
-              </motion.button>
-              <button
-                onClick={handleEndGame}
-                className="w-full py-3 rounded-xl bg-gray-800 text-gray-400 font-medium border border-gray-700 hover:bg-gray-700 transition-colors text-sm"
-              >
-                จบเกม
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   // ========== MAIN PLAYING PHASE ==========
   return (
-    <div className="min-h-screen flex flex-col px-4 py-6">
+    <div className="min-h-screen flex flex-col px-4 py-6 relative">
+      {currentUser.id === currentCircle.hostId && (
+        <div className="absolute top-6 right-6 z-20">
+          <button
+            onClick={handleEndGame}
+            className="px-4 py-2 rounded-xl bg-red-500/10 text-red-500 font-medium border border-red-500/20 hover:bg-red-500/20 transition-colors text-sm"
+          >
+            จบเกม
+          </button>
+        </div>
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent pointer-events-none" />
 
       {/* Top bar */}
@@ -496,14 +462,14 @@ export default function TalkModePage() {
             <MessageCircle className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">{circle.name}</p>
+            <p className="text-sm font-semibold text-white">{currentCircle.name}</p>
             <p className="text-xs text-gray-500">
               Round {roundNumber} •{" "}
-              {answeredUsers.length}/{circle.participants.length} ตอบแล้ว
+              {answeredUsers.length}/{currentCircle.participants.length} ตอบแล้ว
             </p>
           </div>
         </div>
-        <Timer initialSeconds={180} />
+        <Timer initialSeconds={currentCircle.timerSeconds || 180} />
       </div>
 
       {/* Main content */}
@@ -519,7 +485,7 @@ export default function TalkModePage() {
         {currentSpeaker && (
           <SpeakerSpotlight
             speaker={currentSpeaker}
-            allParticipants={circle.participants}
+            allParticipants={currentCircle.participants}
             answeredUserIds={answeredUsers}
             answerOrder={answerOrder}
           />
@@ -528,16 +494,25 @@ export default function TalkModePage() {
         {/* Action buttons */}
         <div className="flex items-center gap-3 w-full max-w-sm">
           {isCurrentSpeaker ? (
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleFinishAnswer}
-              className="flex-1 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold text-lg shadow-lg shadow-green-500/25 flex items-center justify-center gap-2"
-            >
-              ✓ ตอบเสร็จแล้ว
-            </motion.button>
+            <>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={handleFinishAnswer}
+                className="flex-1 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold text-lg shadow-lg shadow-green-500/25 flex items-center justify-center gap-2"
+              >
+                ✓ ตอบเสร็จแล้ว
+              </motion.button>
+              <button
+                onClick={handleSkip}
+                className="p-4 rounded-xl bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-gray-300 transition-all"
+                title="ข้ามคนนี้"
+              >
+                <SkipForward className="w-5 h-5" />
+              </button>
+            </>
           ) : (
-            <div className="flex-1 py-4 rounded-xl bg-gray-800/50 border border-gray-700/50 text-center">
+            <div className="w-full py-4 rounded-xl bg-gray-800/50 border border-gray-700/50 text-center">
               <motion.p
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -547,13 +522,6 @@ export default function TalkModePage() {
               </motion.p>
             </div>
           )}
-          <button
-            onClick={handleSkip}
-            className="p-4 rounded-xl bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-gray-300 transition-all"
-            title="ข้ามคนนี้"
-          >
-            <SkipForward className="w-5 h-5" />
-          </button>
         </div>
       </div>
     </div>

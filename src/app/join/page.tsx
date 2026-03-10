@@ -7,10 +7,12 @@ import { ArrowLeft, LogIn, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { v4 as uuidv4 } from "uuid";
 import { useCircleStore } from "@/store/useCircleStore";
+import { supabase } from "@/lib/supabase";
+import { Circle, User } from "@/types";
 
 export default function JoinCirclePage() {
   const router = useRouter();
-  const { joinCircle, setCurrentUser, getCircleByCode } = useCircleStore();
+  const { joinCircle, setCurrentUser } = useCircleStore();
 
   const [inviteCode, setInviteCode] = useState("");
   const [playerName, setPlayerName] = useState("");
@@ -18,33 +20,59 @@ export default function JoinCirclePage() {
   const [step, setStep] = useState<"code" | "name">("code");
   const [circleName, setCircleName] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCheckCode = () => {
+  const handleCheckCode = async () => {
     if (!inviteCode.trim()) return;
-    const circle = getCircleByCode(inviteCode.trim());
-    if (!circle) {
-      setError("ไม่พบวงสนทนานี้ กรุณาตรวจสอบ code อีกครั้ง");
-      return;
-    }
-    if (circle.participants.length >= circle.maxPeople) {
-      setError("วงสนทนานี้เต็มแล้ว");
-      return;
-    }
-    setCircleName(circle.name);
-    setParticipants(circle.participants.map((p) => p.name));
+    setIsLoading(true);
     setError("");
-    setStep("name");
+
+    try {
+      const { data, error } = await supabase
+        .from("rooms")
+        .select("state_data")
+        .eq("invite_code", inviteCode.trim().toUpperCase())
+        .single();
+
+      if (error || !data) {
+        setError("ไม่พบวงสนทนานี้ กรุณาตรวจสอบ code อีกครั้ง");
+        setIsLoading(false);
+        return;
+      }
+
+      const circle = data.state_data as Circle;
+
+      if (circle.participants.length >= circle.maxPeople) {
+        setError("วงสนทนานี้เต็มแล้ว");
+        setIsLoading(false);
+        return;
+      }
+
+      setCircleName(circle.name);
+      setParticipants(circle.participants.map((p: User) => p.name));
+      setStep("name");
+    } catch (err) {
+      setError("เกิดข้อผิดพลาดในการตรวจสอบ");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!playerName.trim()) return;
+    setIsLoading(true);
+    setError("");
+
     const user = { id: uuidv4(), name: playerName.trim() };
     setCurrentUser(user);
-    const circle = joinCircle(inviteCode.trim(), user);
+
+    const circle = await joinCircle(inviteCode.trim(), user);
     if (!circle) {
       setError("ไม่สามารถเข้าร่วมได้");
+      setIsLoading(false);
       return;
     }
+
     router.push(`/circle/${circle.id}`);
   };
 
@@ -86,12 +114,12 @@ export default function JoinCirclePage() {
                   type="text"
                   value={inviteCode}
                   onChange={(e) => {
-                    setInviteCode(e.target.value.toUpperCase());
+                    setInviteCode(e.target.value);
                     setError("");
                   }}
                   placeholder="กรอก 6 หลัก เช่น ABC123"
                   maxLength={6}
-                  className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl text-white text-center text-2xl font-mono tracking-[0.3em] placeholder-gray-600 placeholder:text-base placeholder:tracking-normal focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl text-white text-center text-2xl font-mono tracking-[0.3em] placeholder-gray-600 placeholder:text-base placeholder:tracking-normal focus:outline-none focus:border-purple-500 transition-colors uppercase"
                 />
               </div>
 
@@ -110,10 +138,10 @@ export default function JoinCirclePage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleCheckCode}
-                disabled={inviteCode.length < 6}
+                disabled={inviteCode.length < 6 || isLoading}
                 className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                ตรวจสอบ Code
+                {isLoading ? "กำลังตรวจสอบ..." : "ตรวจสอบ Code"}
               </motion.button>
             </>
           ) : (
@@ -169,6 +197,7 @@ export default function JoinCirclePage() {
                 <button
                   onClick={() => setStep("code")}
                   className="px-6 py-4 rounded-xl bg-gray-800 text-gray-300 font-medium border border-gray-700 hover:bg-gray-700 transition-colors"
+                  disabled={isLoading}
                 >
                   ← กลับ
                 </button>
@@ -176,10 +205,10 @@ export default function JoinCirclePage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleJoin}
-                  disabled={!playerName.trim()}
+                  disabled={!playerName.trim() || isLoading}
                   className="flex-1 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg shadow-lg shadow-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Join
+                  {isLoading ? "กำลังเข้าร่วม..." : "Join"}
                 </motion.button>
               </div>
             </motion.div>

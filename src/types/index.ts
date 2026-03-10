@@ -32,19 +32,20 @@ export type Round = {
   reactions: Record<string, string[]>; // questionId -> emoji[]
 };
 
-export type Circle = {
-  id: string;
+export interface Circle {
+  id: string; // Auto-incremented ID from Supabase
   name: string;
   category: string;
   customCategory?: string;
   hostId: string;
   participants: User[];
   maxPeople: number;
-  inviteCode: string;
+  inviteCode: string; // 6-digit code
   createdAt: Date;
   rounds: Round[];
   currentRoundIndex: number;
   status: "waiting" | "playing" | "finished";
+  timerSeconds: number; // Duration per speaker in seconds
 };
 
-export type MoodReaction = "😮" | "❤️" | "🤯" | "😢" | "🔥";
+export type MoodReaction = "😮" | "❤️" | "🤯" | "😢" | "🔥" | "🤣" | "😭" | "🤔" | "🥵";

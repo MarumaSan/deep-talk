@@ -4,18 +4,38 @@ import { useParams, useRouter } from "next/navigation";
 import { useCircleStore } from "@/store/useCircleStore";
 import { motion } from "framer-motion";
 import { Copy, Check, Play, Users, MessageCircle, Crown, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { User } from "@/types";
 
 export default function CircleLobbyPage() {
   const params = useParams();
   const router = useRouter();
   const circleId = params.id as string;
-  const { getCircle, currentUser, startGame } = useCircleStore();
-  const circle = getCircle(circleId);
-  const [copied, setCopied] = useState(false);
+  const { currentCircle, currentUser, loadCircle, startGame } = useCircleStore();
 
-  if (!circle || !currentUser) {
+  const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function init() {
+      if (circleId && currentCircle?.id !== circleId) {
+        await loadCircle(circleId);
+      }
+      setIsLoading(false);
+    }
+    init();
+  }, [circleId, currentCircle?.id, loadCircle]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-gray-400 animate-pulse">กำลังโหลดข้อมูลห้อง...</div>
+      </div>
+    );
+  }
+
+  if (!currentCircle || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
@@ -32,17 +52,17 @@ export default function CircleLobbyPage() {
     );
   }
 
-  const isHost = currentUser.id === circle.hostId;
+  const isHost = currentUser.id === currentCircle.hostId;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(circle.inviteCode);
+    navigator.clipboard.writeText(currentCircle.inviteCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!isHost) return;
-    startGame(circleId);
+    await startGame();
     router.push(`/circle/${circleId}/talk`);
   };
 
@@ -50,7 +70,7 @@ export default function CircleLobbyPage() {
     router.push(`/circle/${circleId}/talk`);
   };
 
-  if (circle.status === "playing") {
+  if (currentCircle.status === "playing") {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div
@@ -63,7 +83,7 @@ export default function CircleLobbyPage() {
               <Play className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">เกมกำลังดำเนินอยู่!</h2>
-            <p className="text-gray-400 mb-6">วง &quot;{circle.name}&quot; เริ่มเล่นแล้ว</p>
+            <p className="text-gray-400 mb-6">วง &quot;{currentCircle.name}&quot; เริ่มเล่นแล้ว</p>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -94,9 +114,9 @@ export default function CircleLobbyPage() {
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-white">{circle.name}</h1>
+              <h1 className="text-xl font-bold text-white">{currentCircle.name}</h1>
               <p className="text-sm text-gray-500 capitalize">
-                {circle.customCategory || circle.category}
+                {currentCircle.customCategory || currentCircle.category}
               </p>
             </div>
           </div>
@@ -109,7 +129,7 @@ export default function CircleLobbyPage() {
                   Invite Code
                 </p>
                 <p className="text-2xl font-mono font-bold text-purple-400 tracking-[0.2em]">
-                  {circle.inviteCode}
+                  {currentCircle.inviteCode}
                 </p>
               </div>
               <button
@@ -133,11 +153,11 @@ export default function CircleLobbyPage() {
                 คนในวง
               </p>
               <span className="text-xs text-gray-500">
-                {circle.participants.length}/{circle.maxPeople}
+                {currentCircle.participants.length}/{currentCircle.maxPeople}
               </span>
             </div>
             <div className="space-y-2">
-              {circle.participants.map((user, i) => (
+              {currentCircle.participants.map((user: User, i: number) => (
                 <motion.div
                   key={user.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -151,7 +171,7 @@ export default function CircleLobbyPage() {
                   <span className="text-gray-200 font-medium flex-1">
                     {user.name}
                   </span>
-                  {user.id === circle.hostId && (
+                  {user.id === currentCircle.hostId && (
                     <Crown className="w-4 h-4 text-yellow-400" />
                   )}
                   {user.id === currentUser.id && (
@@ -161,7 +181,7 @@ export default function CircleLobbyPage() {
               ))}
               {/* Empty slots */}
               {Array.from({
-                length: circle.maxPeople - circle.participants.length,
+                length: currentCircle.maxPeople - currentCircle.participants.length,
               }).map((_, i) => (
                 <div
                   key={`empty-${i}`}
@@ -182,11 +202,11 @@ export default function CircleLobbyPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleStart}
-              disabled={circle.participants.length < 2}
+              disabled={currentCircle.participants.length < 2}
               className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Play className="w-5 h-5" />
-              {circle.participants.length < 2
+              {currentCircle.participants.length < 2
                 ? "ต้องมีอย่างน้อย 2 คน"
                 : "เริ่มเลย!"}
             </motion.button>

@@ -14,18 +14,18 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const difficultyLabel =
       difficulty <= 1
         ? "casual and light"
         : difficulty <= 2
-        ? "warm and personal"
-        : difficulty <= 3
-        ? "deep and thought-provoking"
-        : difficulty <= 4
-        ? "vulnerable and emotional"
-        : "very deep, raw, and potentially uncomfortable";
+          ? "warm and personal"
+          : difficulty <= 3
+            ? "deep and thought-provoking"
+            : difficulty <= 4
+              ? "vulnerable and emotional"
+              : "very deep, raw, and potentially uncomfortable";
 
     const prompt = `Generate a single deep conversation question in Thai language.
 

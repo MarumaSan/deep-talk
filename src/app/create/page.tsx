@@ -18,25 +18,30 @@ export default function CreateCirclePage() {
   const [category, setCategory] = useState("random-deep");
   const [customCategory, setCustomCategory] = useState("");
   const [maxPeople, setMaxPeople] = useState(4);
+  const [timerDuration, setTimerDuration] = useState(180); // Default 3 mins
   const [hostName, setHostName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [circleId, setCircleId] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!circleName.trim() || !hostName.trim()) return;
 
+    setIsLoading(true);
     const user = { id: uuidv4(), name: hostName.trim() };
     setCurrentUser(user);
-    const circle = createCircle(
+    const circle = await createCircle(
       circleName.trim(),
       category,
       customCategory.trim(),
-      maxPeople
+      maxPeople,
+      timerDuration
     );
     setInviteCode(circle.inviteCode);
     setCircleId(circle.id);
     setStep("result");
+    setIsLoading(false);
   };
 
   const handleCopy = () => {
@@ -89,6 +94,7 @@ export default function CreateCirclePage() {
                 onChange={(e) => setHostName(e.target.value)}
                 placeholder="ใส่ชื่อที่จะใช้ในวง..."
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+                disabled={isLoading}
               />
             </div>
 
@@ -103,6 +109,7 @@ export default function CreateCirclePage() {
                 onChange={(e) => setCircleName(e.target.value)}
                 placeholder="เช่น Midnight Talk, Deep Night..."
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+                disabled={isLoading}
               />
             </div>
 
@@ -116,11 +123,11 @@ export default function CreateCirclePage() {
                   <button
                     key={cat.value}
                     onClick={() => setCategory(cat.value)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      category === cat.value
-                        ? "bg-purple-500/20 border border-purple-500/50 text-purple-300"
-                        : "bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600"
-                    }`}
+                    disabled={isLoading}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${category === cat.value
+                      ? "bg-purple-500/20 border border-purple-500/50 text-purple-300"
+                      : "bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600"
+                      }`}
                   >
                     {cat.label}
                   </button>
@@ -133,12 +140,13 @@ export default function CreateCirclePage() {
                   onChange={(e) => setCustomCategory(e.target.value)}
                   placeholder="พิมพ์หัวข้อเอง..."
                   className="w-full mt-3 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+                  disabled={isLoading}
                 />
               )}
             </div>
 
             {/* Max People */}
-            <div className="mb-8">
+            <div className="mb-6">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 <Users className="w-4 h-4 inline mr-1" />
                 จำนวนคนสูงสุด
@@ -148,13 +156,40 @@ export default function CreateCirclePage() {
                   <button
                     key={num}
                     onClick={() => setMaxPeople(num)}
-                    className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
-                      maxPeople === num
-                        ? "bg-purple-500 text-white"
-                        : "bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600"
-                    }`}
+                    disabled={isLoading}
+                    className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${maxPeople === num
+                      ? "bg-purple-500 text-white"
+                      : "bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600"
+                      }`}
                   >
                     {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Timer Duration */}
+            <div className="mb-8">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                เวลาตอบต่อคน
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { value: 60, label: "1 นาที" },
+                  { value: 120, label: "2 นาที" },
+                  { value: 180, label: "3 นาที" },
+                  { value: 300, label: "5 นาที" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setTimerDuration(option.value)}
+                    disabled={isLoading}
+                    className={`px-2 py-2 rounded-lg text-sm font-medium transition-all ${timerDuration === option.value
+                      ? "bg-purple-500/20 border border-purple-500/50 text-purple-300"
+                      : "bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600"
+                      }`}
+                  >
+                    {option.label}
                   </button>
                 ))}
               </div>
@@ -164,10 +199,10 @@ export default function CreateCirclePage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleCreate}
-              disabled={!circleName.trim() || !hostName.trim()}
+              disabled={!circleName.trim() || !hostName.trim() || isLoading}
               className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Create Circle
+              {isLoading ? "กำลังสร้าง..." : "Create Circle"}
             </motion.button>
           </div>
         ) : (
