@@ -1,0 +1,561 @@
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+import { useCircleStore } from "@/store/useCircleStore";
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowLeft,
+  MessageCircle,
+  SkipForward,
+  Sparkles,
+  Wand2,
+  Send,
+  Trophy,
+  ChevronRight,
+} from "lucide-react";
+import Link from "next/link";
+import QuestionCard from "@/components/QuestionCard";
+import SpeakerSpotlight from "@/components/SpeakerSpotlight";
+import Timer from "@/components/Timer";
+import { MoodReaction, Question } from "@/types";
+import { v4 as uuidv4 } from "uuid";
+import { getDifficultyForRound } from "@/data/questions";
+
+type TalkPhase = "playing" | "round-end" | "create-question" | "finished";
+
+export default function TalkModePage() {
+  const params = useParams();
+  const router = useRouter();
+  const circleId = params.id as string;
+
+  const {
+    getCircle,
+    currentUser,
+    finishAnswer,
+    skipUser,
+    addReaction,
+    startNewRound,
+    getRandomQuestion,
+    endGame,
+  } = useCircleStore();
+
+  const circle = getCircle(circleId);
+
+  const [phase, setPhase] = useState<TalkPhase>("playing");
+  const [userQuestion, setUserQuestion] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [questionSource, setQuestionSource] = useState<"user" | "ai" | null>(null);
+
+  // Not found / not joined guard
+  if (!circle || !currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-gray-400 mb-4">ไม่พบวงสนทนา</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            กลับหน้าหลัก
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const currentRound = circle.rounds[circle.currentRoundIndex];
+  if (!currentRound) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-gray-400 mb-4">ยังไม่ได้เริ่มเกม</p>
+          <Link
+            href={`/circle/${circleId}`}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            กลับห้องรอ
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const {
+    question,
+    answerOrder,
+    answeredUsers,
+    roundNumber,
+  } = currentRound;
+
+  const isRoundComplete = answeredUsers.length === circle.participants.length;
+  const currentSpeakerIndex = answeredUsers.length;
+  const currentSpeakerId = answerOrder[currentSpeakerIndex];
+  const currentSpeaker = circle.participants.find((p) => p.id === currentSpeakerId);
+
+  // The first answerer of this round will create next question
+  const questionCreatorId = answerOrder[0];
+  const questionCreator = circle.participants.find((p) => p.id === questionCreatorId);
+  const isQuestionCreator = currentUser.id === questionCreatorId;
+
+  // Check if current user is the active speaker
+  const isCurrentSpeaker = currentUser.id === currentSpeakerId;
+
+  const handleFinishAnswer = () => {
+    if (!currentSpeakerId) return;
+    finishAnswer(circleId, currentSpeakerId);
+
+    // Check if round is now complete after this answer
+    const newAnsweredCount = answeredUsers.length + 1;
+    if (newAnsweredCount >= circle.participants.length) {
+      setPhase("round-end");
+    }
+  };
+
+  const handleSkip = () => {
+    if (!currentSpeakerId) return;
+    skipUser(circleId, currentSpeakerId);
+
+    const newAnsweredCount = answeredUsers.length + 1;
+    if (newAnsweredCount >= circle.participants.length) {
+      setPhase("round-end");
+    }
+  };
+
+  const handleReaction = (emoji: MoodReaction) => {
+    addReaction(circleId, circle.currentRoundIndex, emoji);
+  };
+
+  const handleNextRound = () => {
+    setPhase("create-question");
+    setQuestionSource(null);
+    setUserQuestion("");
+  };
+
+  const handleSubmitUserQuestion = () => {
+    if (!userQuestion.trim()) return;
+    const newQuestion: Question = {
+      id: uuidv4(),
+      text: userQuestion.trim(),
+      category: circle.category,
+      difficulty: getDifficultyForRound(roundNumber + 1),
+      createdBy: "user",
+    };
+    startNewRound(circleId, newQuestion);
+    setPhase("playing");
+    setUserQuestion("");
+    setQuestionSource(null);
+  };
+
+  const handleAIQuestion = async () => {
+    setAiLoading(true);
+    try {
+      const difficulty = getDifficultyForRound(roundNumber + 1);
+      const res = await fetch("/api/generate-question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: circle.customCategory || circle.category,
+          difficulty,
+        }),
+      });
+      const data = await res.json();
+      if (data.question) {
+        const newQuestion: Question = {
+          id: uuidv4(),
+          text: data.question,
+          category: circle.category,
+          difficulty,
+          createdBy: "ai",
+        };
+        startNewRound(circleId, newQuestion);
+        setPhase("playing");
+      } else {
+        // Fallback to random
+        handleRandomQuestion();
+      }
+    } catch {
+      // Fallback to random question from pool
+      handleRandomQuestion();
+    } finally {
+      setAiLoading(false);
+      setQuestionSource(null);
+    }
+  };
+
+  const handleRandomQuestion = () => {
+    const q = getRandomQuestion(circleId);
+    if (q) {
+      startNewRound(circleId, q);
+      setPhase("playing");
+    }
+    setQuestionSource(null);
+  };
+
+  const handleEndGame = () => {
+    endGame(circleId);
+    setPhase("finished");
+  };
+
+  // ========== RENDER ==========
+
+  // Finished state
+  if (phase === "finished" || circle.status === "finished") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-lg text-center"
+        >
+          <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-8">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+              <Trophy className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-2">จบเกม!</h2>
+            <p className="text-gray-400 mb-6">
+              วง &quot;{circle.name}&quot; เล่นทั้งหมด {circle.rounds.length} รอบ
+            </p>
+
+            {/* Summary */}
+            <div className="bg-gray-800/50 rounded-xl p-5 mb-6 text-left">
+              <h3 className="text-sm font-medium text-gray-400 mb-3">สรุป</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">จำนวนรอบ</span>
+                  <span className="text-white font-medium">{circle.rounds.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">ผู้เข้าร่วม</span>
+                  <span className="text-white font-medium">{circle.participants.length} คน</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">หัวข้อ</span>
+                  <span className="text-white font-medium capitalize">
+                    {circle.customCategory || circle.category}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Reflection prompt */}
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-5 mb-6 text-left">
+              <h3 className="text-sm font-semibold text-purple-400 mb-2">
+                💭 Reflection
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                คำถามไหนที่ทำให้คุณคิดมากที่สุด? คุณได้เรียนรู้อะไรใหม่เกี่ยวกับคนในวงบ้าง?
+                ลองใช้เวลาสักครู่เพื่อย้อนคิดถึงสิ่งที่ได้แบ่งปันกันวันนี้
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Link href="/create" className="flex-1">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/25"
+                >
+                  สร้างวงใหม่
+                </motion.button>
+              </Link>
+              <Link href="/" className="flex-1">
+                <button className="w-full py-4 rounded-xl bg-gray-800 text-gray-300 font-medium border border-gray-700 hover:bg-gray-700 transition-colors">
+                  หน้าหลัก
+                </button>
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Create question phase
+  if (phase === "create-question") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-10">
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent pointer-events-none" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md relative z-10"
+        >
+          <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-8">
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl font-bold text-white">
+                {questionCreator?.name.charAt(0).toUpperCase()}
+              </div>
+              <h2 className="text-xl font-bold text-white mb-1">
+                {isQuestionCreator ? "คุณเป็นคนตั้งคำถามถัดไป!" : `${questionCreator?.name} กำลังตั้งคำถาม...`}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Round {roundNumber + 1} • Difficulty: {getDifficultyForRound(roundNumber + 1)}/5
+              </p>
+            </div>
+
+            {isQuestionCreator ? (
+              <>
+                {!questionSource ? (
+                  <div className="space-y-3">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setQuestionSource("user")}
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-gray-800 border border-gray-700 hover:border-purple-500/50 transition-all text-left"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                        <Send className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">พิมพ์คำถามเอง</p>
+                        <p className="text-xs text-gray-500">ตั้งคำถามจากใจคุณ</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-500 ml-auto" />
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setQuestionSource("ai");
+                        handleAIQuestion();
+                      }}
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-gray-800 border border-gray-700 hover:border-pink-500/50 transition-all text-left"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                        <Wand2 className="w-5 h-5 text-pink-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">ให้ AI ตั้งคำถาม</p>
+                        <p className="text-xs text-gray-500">AI จะสร้างคำถามลึกๆ ให้</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-500 ml-auto" />
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleRandomQuestion}
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-gray-800 border border-gray-700 hover:border-blue-500/50 transition-all text-left"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">สุ่มจากคลัง</p>
+                        <p className="text-xs text-gray-500">สุ่มคำถามจากคลังคำถาม</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-500 ml-auto" />
+                    </motion.button>
+                  </div>
+                ) : questionSource === "user" ? (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    <textarea
+                      value={userQuestion}
+                      onChange={(e) => setUserQuestion(e.target.value)}
+                      placeholder="พิมพ์คำถามของคุณ..."
+                      rows={3}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors resize-none mb-4"
+                      autoFocus
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setQuestionSource(null)}
+                        className="px-4 py-3 rounded-xl bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 transition-colors"
+                      >
+                        ← กลับ
+                      </button>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleSubmitUserQuestion}
+                        disabled={!userQuestion.trim()}
+                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        ส่งคำถาม
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className="text-center py-8">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="w-10 h-10 mx-auto mb-4 border-2 border-purple-500 border-t-transparent rounded-full"
+                    />
+                    <p className="text-gray-400">AI กำลังคิดคำถาม...</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <motion.div
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="text-gray-400"
+                >
+                  รอ {questionCreator?.name} ตั้งคำถาม...
+                </motion.div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Round end phase
+  if (phase === "round-end" || isRoundComplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-10">
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent pointer-events-none" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md relative z-10"
+        >
+          <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-8 text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", delay: 0.2 }}
+              className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center"
+            >
+              <span className="text-3xl">✅</span>
+            </motion.div>
+
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Round {roundNumber} จบแล้ว!
+            </h2>
+            <p className="text-gray-400 mb-6">
+              ทุกคนตอบครบแล้ว
+            </p>
+
+            {/* Question recap */}
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 mb-6 text-left">
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">
+                คำถามรอบนี้
+              </p>
+              <p className="text-gray-200 font-medium">
+                &ldquo;{question.text}&rdquo;
+              </p>
+            </div>
+
+            {/* Answered by */}
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {answerOrder.map((userId) => {
+                const user = circle.participants.find((p) => p.id === userId);
+                return (
+                  <span
+                    key={userId}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm"
+                  >
+                    ✓ {user?.name}
+                  </span>
+                );
+              })}
+            </div>
+
+            <div className="space-y-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleNextRound}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-lg shadow-lg shadow-purple-500/25"
+              >
+                รอบถัดไป →
+              </motion.button>
+              <button
+                onClick={handleEndGame}
+                className="w-full py-3 rounded-xl bg-gray-800 text-gray-400 font-medium border border-gray-700 hover:bg-gray-700 transition-colors text-sm"
+              >
+                จบเกม
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ========== MAIN PLAYING PHASE ==========
+  return (
+    <div className="min-h-screen flex flex-col px-4 py-6">
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent pointer-events-none" />
+
+      {/* Top bar */}
+      <div className="relative z-10 flex items-center justify-between mb-6 max-w-lg mx-auto w-full">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <MessageCircle className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-white">{circle.name}</p>
+            <p className="text-xs text-gray-500">
+              Round {roundNumber} •{" "}
+              {answeredUsers.length}/{circle.participants.length} ตอบแล้ว
+            </p>
+          </div>
+        </div>
+        <Timer initialSeconds={180} />
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full relative z-10 gap-8">
+        {/* Question Card */}
+        <QuestionCard
+          question={question}
+          onReaction={handleReaction}
+          showReactions={true}
+        />
+
+        {/* Speaker Spotlight */}
+        {currentSpeaker && (
+          <SpeakerSpotlight
+            speaker={currentSpeaker}
+            allParticipants={circle.participants}
+            answeredUserIds={answeredUsers}
+            answerOrder={answerOrder}
+          />
+        )}
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-3 w-full max-w-sm">
+          {isCurrentSpeaker ? (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handleFinishAnswer}
+              className="flex-1 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold text-lg shadow-lg shadow-green-500/25 flex items-center justify-center gap-2"
+            >
+              ✓ ตอบเสร็จแล้ว
+            </motion.button>
+          ) : (
+            <div className="flex-1 py-4 rounded-xl bg-gray-800/50 border border-gray-700/50 text-center">
+              <motion.p
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-gray-400"
+              >
+                รอ {currentSpeaker?.name} ตอบ...
+              </motion.p>
+            </div>
+          )}
+          <button
+            onClick={handleSkip}
+            className="p-4 rounded-xl bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-gray-300 transition-all"
+            title="ข้ามคนนี้"
+          >
+            <SkipForward className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
