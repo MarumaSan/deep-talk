@@ -19,6 +19,11 @@ function generateInviteCode(): string {
   return code;
 }
 
+// Helper for Bangkok Time (+07:00)
+const getBangkokISOString = (date = new Date()) => {
+  return date.toLocaleString("sv-SE", { timeZone: "Asia/Bangkok" }).replace(" ", "T") + "+07:00";
+};
+
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -83,7 +88,7 @@ interface CircleStore {
 async function updateCircleInDB(circle: Circle) {
   await supabase
     .from("rooms")
-    .update({ state_data: circle, updated_at: new Date().toISOString() })
+    .update({ state_data: circle, updated_at: getBangkokISOString() })
     .eq("id", circle.id);
 }
 
@@ -113,8 +118,8 @@ export const useCircleStore = create<CircleStore>((set, get) => {
 
       // Auto-cleanup: delete rooms older than 2 hours
       try {
-        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-        await supabase.from("rooms").delete().lt("updated_at", twoHoursAgo);
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        await supabase.from("rooms").delete().lt("updated_at", getBangkokISOString(twoHoursAgo));
       } catch (err) {
         console.error("Failed to cleanup old rooms:", err);
       }
@@ -148,7 +153,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
         participants: [hostUser],
         maxPeople,
         inviteCode,
-        createdAt: new Date().toISOString() as unknown as Date,
+        createdAt: getBangkokISOString() as unknown as Date,
         rounds: [],
         currentRoundIndex: -1,
         status: "waiting",
