@@ -228,9 +228,8 @@ function DeepQuestionPreview() {
                 {[1, 2, 3, 4, 5].map((level) => (
                   <div
                     key={level}
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      level <= q.difficulty ? "bg-purple-400" : "bg-gray-700"
-                    }`}
+                    className={`w-1.5 h-1.5 rounded-full ${level <= q.difficulty ? "bg-purple-400" : "bg-gray-700"
+                      }`}
                   />
                 ))}
                 <span className="text-xs text-gray-500 ml-2 capitalize">
@@ -259,7 +258,7 @@ export default function Home() {
       <footer className="py-10 text-center text-gray-600 text-sm border-t border-gray-800/50">
         <div className="flex items-center justify-center gap-2 mb-2">
           <MessageCircle className="w-4 h-4" />
-          <span className="font-semibold text-gray-400">Deep Talk</span>
+          <span className="font-semibold text-gray-400">Deep Talk By Maruma</span>
         </div>
         <p>คำถามที่ทำให้คุณรู้จักกันจริงๆ</p>
       </footer>
