@@ -116,10 +116,10 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const state = get();
       if (!state.currentUser) throw new Error("No user");
 
-      // Auto-cleanup: delete rooms older than 2 hours
+      // Auto-cleanup: delete rooms older than 10 minutes
       try {
-        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
-        await supabase.from("rooms").delete().lt("updated_at", getBangkokISOString(twoHoursAgo));
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+        await supabase.from("rooms").delete().lt("updated_at", getBangkokISOString(tenMinutesAgo));
       } catch (err) {
         console.error("Failed to cleanup old rooms:", err);
       }
