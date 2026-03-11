@@ -19,7 +19,7 @@ import QuestionCard from "@/components/QuestionCard";
 import SpeakerSpotlight from "@/components/SpeakerSpotlight";
 import { MoodReaction, Question, User } from "@/types";
 import { v4 as uuidv4 } from "uuid";
-import { getDifficultyForRound } from "@/data/questions";
+import { getDifficultyForRound, getDifficultyLabel } from "@/data/questions";
 
 type TalkPhase = "playing" | "round-end" | "create-question" | "finished";
 
@@ -308,7 +308,7 @@ export default function TalkModePage() {
                   : `${questionCreator?.name} กำลังตั้งคำถาม...`}
               </h2>
               <p className="text-sm text-gray-500">
-                Round {roundNumber + 1} • Difficulty: {getDifficultyForRound(roundNumber + 1)}/5
+                Round {roundNumber + 1} • {getDifficultyLabel(getDifficultyForRound(roundNumber + 1))}
               </p>
             </div>
 

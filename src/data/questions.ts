@@ -74,30 +74,38 @@ export function getQuestionsByDifficulty(questions: Question[], maxDifficulty: n
 
 export function getDifficultyForRound(roundNumber: number): number {
   if (roundNumber <= 2) return 1;
-  if (roundNumber <= 4) return 2;
-  if (roundNumber <= 6) return 3;
-  if (roundNumber <= 8) return 4;
-  return 5;
+  if (roundNumber <= 5) return 2;
+  if (roundNumber <= 9) return 3;
+  if (roundNumber <= 14) return 4;
+  if (roundNumber <= 20) return 5;
+  if (roundNumber <= 27) return 6;
+  if (roundNumber <= 35) return 7;
+  if (roundNumber <= 44) return 8;
+  if (roundNumber <= 54) return 9;
+  return 10;
 }
 
 export function getDifficultyLabel(difficulty: number): string {
   switch (difficulty) {
-    case 1: return "Casual";
-    case 2: return "Warm Up";
-    case 3: return "Getting Deep";
-    case 4: return "Vulnerable";
-    case 5: return "Dangerous";
-    default: return "Unknown";
+    case 1: return "Level 1: Casual";
+    case 2: return "Level 2: Warm Up";
+    case 3: return "Level 3: Ice Breaker";
+    case 4: return "Level 4: Getting Deep";
+    case 5: return "Level 5: Going Deeper";
+    case 6: return "Level 6: Reflective";
+    case 7: return "Level 7: Vulnerable";
+    case 8: return "Level 8: Intimate";
+    case 9: return "Level 9: Dangerous";
+    case 10: return "Level 10: Soul Bare";
+    default: return `Level ${difficulty}`;
   }
 }
 
 export function getDifficultyColor(difficulty: number): string {
-  switch (difficulty) {
-    case 1: return "text-green-400";
-    case 2: return "text-blue-400";
-    case 3: return "text-yellow-400";
-    case 4: return "text-orange-400";
-    case 5: return "text-red-400";
-    default: return "text-gray-400";
-  }
+  if (difficulty >= 10) return "text-fuchsia-400";
+  if (difficulty >= 9) return "text-red-500";
+  if (difficulty >= 7) return "text-orange-400";
+  if (difficulty >= 5) return "text-yellow-400";
+  if (difficulty >= 3) return "text-blue-400";
+  return "text-green-400";
 }

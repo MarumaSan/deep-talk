@@ -18,20 +18,20 @@ export async function POST(req: NextRequest) {
     }
 
     const difficultyLabel =
-      difficulty <= 1
-        ? "casual and light"
-        : difficulty <= 2
-          ? "warm and personal"
-          : difficulty <= 3
-            ? "deep and thought-provoking"
-            : difficulty <= 4
-              ? "vulnerable and emotional"
-              : "very deep, raw, and potentially uncomfortable";
+      difficulty <= 2
+        ? "casual, warm up, and light"
+        : difficulty <= 4
+          ? "ice breaker and getting personal"
+          : difficulty <= 6
+            ? "going deeper and reflective"
+            : difficulty <= 8
+              ? "vulnerable and intimate"
+              : "dangerous, very deep, raw, and potentially uncomfortable";
 
     const prompt = `Generate a single deep conversation question in Thai language.
 
 Category: ${category}
-Depth Level: ${difficulty}/5 (${difficultyLabel})
+Depth Level: ${difficulty}/10 (${difficultyLabel})
 
 Rules:
 - The question should be ${difficultyLabel}
