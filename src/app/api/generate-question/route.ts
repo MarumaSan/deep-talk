@@ -17,21 +17,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const difficultyLabel =
-      difficulty <= 2
-        ? "casual, warm up, and light"
-        : difficulty <= 4
-          ? "ice breaker and getting personal"
-          : difficulty <= 6
-            ? "going deeper and reflective"
-            : difficulty <= 8
-              ? "vulnerable and intimate"
-              : "dangerous, very deep, raw, and potentially uncomfortable";
+    // const difficultyLabel =
+    //   difficulty <= 2
+    //     ? "casual, warm up, and light"
+    //     : difficulty <= 4
+    //       ? "ice breaker and getting personal"
+    //       : difficulty <= 6
+    //         ? "going deeper and reflective"
+    //         : difficulty <= 8
+    //           ? "vulnerable and intimate"
+    //           : "dangerous, very deep, raw, and potentially uncomfortable";
+
+    const getDifficultyTone = (level: number) => {
+      switch (level) {
+        case 1: return "very casual, safe, and light warm-up";
+        case 2: return "casual and friendly icebreaker";
+        case 3: return "personal but still comfortable";
+        case 4: return "getting personal and reflective";
+        case 5: return "moderately deep and introspective";
+        case 6: return "deep personal reflection";
+        case 7: return "vulnerable and emotionally honest";
+        case 8: return "very vulnerable and intimate";
+        case 9: return "raw emotional and uncomfortable truth";
+        case 10: return "extremely deep, confronting, and psychologically intense";
+        default: return "deep personal reflection";
+      }
+    };
+
+    const difficultyLabel = getDifficultyTone(difficulty);
 
     const prompt = `Generate a single deep conversation question in Thai language.
 
 Category: ${category}
-Depth Level: ${difficulty}/10 (${difficultyLabel})
+Difficulty Level: ${difficulty}/10 
+Tone: ${difficultyLabel}
 
 Rules:
 - The question should be ${difficultyLabel}
@@ -40,9 +59,33 @@ Rules:
 - Write ONLY the question text in Thai, nothing else
 - Do not include quotation marks
 - Do not include numbering or bullets
-- Always end the question with a question mark (?)`;
+- The question should be answerable in conversation.
+- Always end the question with a question mark (?)
 
-    const result = await model.generateContent(prompt);
+Depth guideline:
+
+1 = extremely light and safe
+2 = friendly icebreaker
+3 = slightly personal
+4 = reflective but comfortable
+5 = moderately deep
+6 = deep introspection
+7 = vulnerable emotional sharing
+8 = intimate and revealing
+9 = uncomfortable truth
+10 = confronting, raw, and psychologically deep`;
+
+    // Implement logic to bail out if Gemini takes longer than 9 seconds (Serverless limits often at 10s)
+    function generateWithTimeout() {
+      return Promise.race([
+        model!.generateContent(prompt),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("AI generation timed out")), 9000)
+        ) as Promise<never>
+      ]);
+    }
+
+    const result = await generateWithTimeout();
     let text = result.response.text().trim();
 
     // Ensure it ends with ?

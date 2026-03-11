@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useCircleStore } from "@/store/useCircleStore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -54,6 +54,10 @@ export default function TalkModePage() {
   const [userQuestion, setUserQuestion] = useState("");
   const [questionSource, setQuestionSource] = useState<"user" | "ai" | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleReaction = useCallback(async (emoji: MoodReaction) => {
+    await addReaction(emoji);
+  }, [addReaction]);
 
   useEffect(() => {
     async function init() {
@@ -140,9 +144,7 @@ export default function TalkModePage() {
     await skipUser(currentSpeakerId);
   };
 
-  const handleReaction = async (emoji: MoodReaction) => {
-    await addReaction(emoji);
-  };
+
 
   const handleSubmitUserQuestion = async () => {
     if (!userQuestion.trim()) return;

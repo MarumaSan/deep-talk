@@ -2,6 +2,7 @@
 
 import { User } from "@/types";
 import { motion } from "framer-motion";
+import React from "react";
 import { Mic } from "lucide-react";
 
 interface SpeakerSpotlightProps {
@@ -11,7 +12,7 @@ interface SpeakerSpotlightProps {
   answerOrder: string[];
 }
 
-export default function SpeakerSpotlight({
+export default React.memo(function SpeakerSpotlight({
   speaker,
   allParticipants,
   answeredUserIds,
@@ -56,22 +57,20 @@ export default function SpeakerSpotlight({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all ${
-                isCurrent
-                  ? "bg-purple-500/20 border border-purple-500/40 text-purple-300"
-                  : hasAnswered
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all ${isCurrent
+                ? "bg-purple-500/20 border border-purple-500/40 text-purple-300"
+                : hasAnswered
                   ? "bg-green-500/10 border border-green-500/30 text-green-400"
                   : "bg-gray-800/50 border border-gray-700/50 text-gray-500"
-              }`}
+                }`}
             >
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                  isCurrent
-                    ? "bg-purple-500 text-white"
-                    : hasAnswered
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${isCurrent
+                  ? "bg-purple-500 text-white"
+                  : hasAnswered
                     ? "bg-green-500/30 text-green-300"
                     : "bg-gray-700 text-gray-400"
-                }`}
+                  }`}
               >
                 {user.name.charAt(0).toUpperCase()}
               </div>
@@ -92,3 +91,4 @@ export default function SpeakerSpotlight({
     </div>
   );
 }
+);

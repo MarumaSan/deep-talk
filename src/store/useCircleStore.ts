@@ -9,6 +9,17 @@ import {
   defaultQuestions,
 } from "@/data/questions";
 
+// Simple custom debouncer for DB syncs
+const debounceTimeouts: Record<string, NodeJS.Timeout> = {};
+function debounceDBUpdate(circleId: string, circleData: Circle) {
+  if (debounceTimeouts[circleId]) {
+    clearTimeout(debounceTimeouts[circleId]);
+  }
+  debounceTimeouts[circleId] = setTimeout(() => {
+    updateCircleInDB(circleData).catch(console.error);
+  }, 1000); // 1 second debounce
+}
+
 function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const randomValues = new Uint32Array(6);
@@ -48,8 +59,14 @@ function loadUser(): User | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(USER_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.id === "string" && typeof parsed.name === "string") {
+      return parsed as User;
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to parse user from local storage", err);
     return null;
   }
 }
@@ -58,7 +75,9 @@ function saveUser(user: User) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-  } catch { }
+  } catch (err) {
+    console.error("Failed to save user to local storage", err);
+  }
 }
 
 interface CircleStore {
@@ -337,8 +356,10 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       };
 
       const updatedCircle = { ...circle, currentRound: updatedRound };
+      // 1. Instantly update local UI
       set({ currentCircle: updatedCircle });
-      await updateCircleInDB(updatedCircle);
+      // 2. Debounce the actual database write
+      debounceDBUpdate(updatedCircle.id, updatedCircle);
     },
 
     skipUser: async (userId) => {

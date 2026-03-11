@@ -3,7 +3,7 @@
 import { Question, MoodReaction } from "@/types";
 import { getDifficultyLabel, getDifficultyColor } from "@/data/questions";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import React, { useState } from "react";
 
 const reactions: MoodReaction[] = ["😮", "❤️", "🤯", "😢", "🔥"];
 
@@ -15,7 +15,7 @@ interface QuestionCardProps {
   reactionsList?: string[];
 }
 
-export default function QuestionCard({
+export default React.memo(function QuestionCard({
   question,
   onReaction,
   showReactions = true,
@@ -121,3 +121,4 @@ export default function QuestionCard({
     </AnimatePresence>
   );
 }
+);
