@@ -6,7 +6,7 @@ export const maxDuration = 30; // Allow longer execution time on Vercel
 // Initialize globally to reuse across requests (Serverless optimization)
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
-const model = genAI ? genAI.getGenerativeModel({ model: "gemini-3-flash" }) : null;
+const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : null;
 
 export async function POST(req: NextRequest) {
   try {
