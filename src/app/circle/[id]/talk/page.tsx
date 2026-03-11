@@ -119,8 +119,11 @@ export default function TalkModePage() {
   const currentSpeakerId = answerOrder[currentSpeakerIndex];
   const currentSpeaker = currentCircle.participants.find((p: User) => p.id === currentSpeakerId);
 
-  // The Host ALWAYS creates the question, per user's request.
-  const questionCreatorId = currentCircle.hostId;
+  // Round 1: Host creates the question.
+  // Round 2+: The first answerer of the PREVIOUS round creates the question.
+  const questionCreatorId = currentRound && currentRound.answerOrder.length > 0
+    ? currentRound.answerOrder[0]
+    : currentCircle.hostId;
   const questionCreator = currentCircle.participants.find((p: User) => p.id === questionCreatorId);
   const isQuestionCreator = currentUser.id === questionCreatorId;
 
@@ -178,12 +181,13 @@ export default function TalkModePage() {
         };
         await startNewRound(newQuestion);
       } else {
-        // Fallback to random
-        await handleRandomQuestion();
+        setQuestionSource(null);
+        alert("ไม่สามารถสร้างคำถามจาก AI ได้ โปรดลองใหม่อีกครั้ง");
       }
-    } catch {
-      // Fallback to random question from pool
-      await handleRandomQuestion();
+    } catch (error) {
+      console.error("Failed to generate question:", error);
+      setQuestionSource(null);
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ หรือ AI ตอบรับช้า โปรดลองพิมพ์เองหรือสุ่มใหม่");
     } finally {
       setQuestionSource(null);
     }
