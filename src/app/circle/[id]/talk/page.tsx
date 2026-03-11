@@ -146,9 +146,12 @@ export default function TalkModePage() {
 
   const handleSubmitUserQuestion = async () => {
     if (!userQuestion.trim()) return;
+    let text = userQuestion.trim();
+    if (!text.endsWith("?")) text += "?";
+
     const newQuestion: Question = {
       id: uuidv4(),
-      text: userQuestion.trim(),
+      text,
       category: currentCircle.category,
       difficulty: getDifficultyForRound(roundNumber + 1),
       createdBy: "user",
