@@ -74,14 +74,14 @@ export function getQuestionsByDifficulty(questions: Question[], maxDifficulty: n
 
 export function getDifficultyForRound(roundNumber: number): number {
   if (roundNumber <= 2) return 1;
-  if (roundNumber <= 5) return 2;
-  if (roundNumber <= 9) return 3;
-  if (roundNumber <= 14) return 4;
-  if (roundNumber <= 20) return 5;
-  if (roundNumber <= 27) return 6;
-  if (roundNumber <= 35) return 7;
-  if (roundNumber <= 44) return 8;
-  if (roundNumber <= 54) return 9;
+  if (roundNumber <= 4) return 2;
+  if (roundNumber <= 6) return 3;
+  if (roundNumber <= 8) return 4;
+  if (roundNumber <= 10) return 5;
+  if (roundNumber <= 12) return 6;
+  if (roundNumber <= 15) return 7;
+  if (roundNumber <= 18) return 8;
+  if (roundNumber <= 22) return 9;
   return 10;
 }
 

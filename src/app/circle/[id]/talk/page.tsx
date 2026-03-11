@@ -23,16 +23,16 @@ import { getDifficultyForRound, getDifficultyLabel } from "@/data/questions";
 type TalkPhase = "playing" | "round-end" | "create-question" | "finished";
 
 const getLevelInfo = (count: number) => {
-  if (count <= 2) return { level: 1, min: 0, max: 2 };
-  if (count <= 5) return { level: 2, min: 2, max: 5 };
-  if (count <= 9) return { level: 3, min: 5, max: 9 };
-  if (count <= 14) return { level: 4, min: 9, max: 14 };
-  if (count <= 20) return { level: 5, min: 14, max: 20 };
-  if (count <= 27) return { level: 6, min: 20, max: 27 };
-  if (count <= 35) return { level: 7, min: 27, max: 35 };
-  if (count <= 44) return { level: 8, min: 35, max: 44 };
-  if (count <= 54) return { level: 9, min: 44, max: 54 };
-  return { level: 10, min: 54, max: 54 }; // MAX
+  if (count <= 2) return { level: 1, min: 0, max: 2 };     // 1-2
+  if (count <= 4) return { level: 2, min: 2, max: 4 };     // 3-4
+  if (count <= 6) return { level: 3, min: 4, max: 6 };     // 5-6
+  if (count <= 8) return { level: 4, min: 6, max: 8 };     // 7-8
+  if (count <= 10) return { level: 5, min: 8, max: 10 };   // 9-10
+  if (count <= 12) return { level: 6, min: 10, max: 12 };  // 11-12
+  if (count <= 15) return { level: 7, min: 12, max: 15 };  // 13-15
+  if (count <= 18) return { level: 8, min: 15, max: 18 };  // 16-18
+  if (count <= 22) return { level: 9, min: 18, max: 22 };  // 19-22
+  return { level: 10, min: 22, max: 22 }; // 23+ MAX
 };
 
 export default function TalkModePage() {
