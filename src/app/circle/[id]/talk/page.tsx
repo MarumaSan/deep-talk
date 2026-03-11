@@ -290,14 +290,34 @@ export default function TalkModePage() {
                 {questionCreator?.name.charAt(0).toUpperCase()}
               </div>
               <h2 className="text-xl font-bold text-white mb-1">
-                {isQuestionCreator ? "คุณเป็นคนตั้งคำถามถัดไป!" : `${questionCreator?.name} กำลังตั้งคำถาม...`}
+                {isRoundComplete && currentCircle.maxRounds > 0 && currentCircle.rounds.length >= currentCircle.maxRounds
+                  ? "จบเกมแล้ว!"
+                  : isQuestionCreator
+                    ? "คุณเป็นคนตั้งคำถามถัดไป!"
+                    : `${questionCreator?.name} กำลังตั้งคำถาม...`}
               </h2>
-              <p className="text-sm text-gray-500">
-                Round {roundNumber + 1} • Difficulty: {getDifficultyForRound(roundNumber + 1)}/5
-              </p>
+              {(!isRoundComplete || currentCircle.maxRounds === 0 || currentCircle.rounds.length < currentCircle.maxRounds) && (
+                <p className="text-sm text-gray-500">
+                  Round {roundNumber + 1} • Difficulty: {getDifficultyForRound(roundNumber + 1)}/5
+                </p>
+              )}
             </div>
 
-            {isQuestionCreator ? (
+            {isRoundComplete && currentCircle.maxRounds > 0 && currentCircle.rounds.length >= currentCircle.maxRounds ? (
+              <div className="text-center py-8">
+                <p className="text-white font-medium mb-4">เล่นครบ {currentCircle.maxRounds} ข้อแล้ว!</p>
+                {currentUser.id === currentCircle.hostId ? (
+                  <button
+                    onClick={handleEndGame}
+                    className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                  >
+                    ดูบทสรุป
+                  </button>
+                ) : (
+                  <p className="text-gray-400">รอ Host กดจบเกม...</p>
+                )}
+              </div>
+            ) : isQuestionCreator ? (
               <>
                 {!questionSource ? (
                   <div className="space-y-3">
@@ -442,6 +462,14 @@ export default function TalkModePage() {
             </p>
           </div>
         </div>
+        <div className="flex flex-col items-end">
+          <span className="text-sm font-semibold text-purple-400">
+            ข้อที่ {currentCircle.rounds.length}{currentCircle.maxRounds > 0 ? ` / ${currentCircle.maxRounds}` : ''}
+          </span>
+          <span className="text-xs text-gray-500">
+            {currentCircle.maxRounds > 0 ? 'จำนวนรอบข้อ' : 'เล่นไปเรื่อยๆ'}
+          </span>
+        </div>
       </div>
 
       {/* Main content */}
@@ -451,6 +479,7 @@ export default function TalkModePage() {
           question={question!}
           onReaction={handleReaction}
           showReactions={true}
+          reactionsList={currentCircle.rounds[currentCircle.currentRoundIndex]?.reactions?.[question!.id] || []}
         />
 
         {/* Speaker Spotlight */}

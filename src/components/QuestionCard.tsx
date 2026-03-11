@@ -12,6 +12,7 @@ interface QuestionCardProps {
   onReaction?: (emoji: MoodReaction) => void;
   showReactions?: boolean;
   isSpinning?: boolean;
+  reactionsList?: string[];
 }
 
 export default function QuestionCard({
@@ -19,6 +20,7 @@ export default function QuestionCard({
   onReaction,
   showReactions = true,
   isSpinning = false,
+  reactionsList = [],
 }: QuestionCardProps) {
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
 
@@ -52,11 +54,10 @@ export default function QuestionCard({
                 {[1, 2, 3, 4, 5].map((level) => (
                   <div
                     key={level}
-                    className={`w-2 h-2 rounded-full ${
-                      level <= question.difficulty
+                    className={`w-2 h-2 rounded-full ${level <= question.difficulty
                         ? "bg-purple-400"
                         : "bg-gray-700"
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -91,21 +92,28 @@ export default function QuestionCard({
           {/* Reactions */}
           {showReactions && (
             <div className="flex items-center justify-center gap-3 mt-6">
-              {reactions.map((emoji) => (
-                <motion.button
-                  key={emoji}
-                  whileHover={{ scale: 1.3 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => handleReaction(emoji)}
-                  className={`text-2xl transition-all ${
-                    selectedReaction === emoji
-                      ? "scale-125 drop-shadow-lg"
-                      : "opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  {emoji}
-                </motion.button>
-              ))}
+              {reactions.map((emoji) => {
+                const count = reactionsList.filter((e) => e === emoji).length;
+                return (
+                  <motion.button
+                    key={emoji}
+                    whileHover={{ scale: 1.3 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleReaction(emoji)}
+                    className={`relative text-2xl transition-all ${selectedReaction === emoji
+                        ? "scale-125 drop-shadow-lg"
+                        : "opacity-60 hover:opacity-100"
+                      }`}
+                  >
+                    {emoji}
+                    {count > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-purple-500 text-white text-[10px] w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold shadow-lg ring-2 ring-gray-900 leading-none pb-[1px]">
+                        {count > 99 ? '99+' : count}
+                      </span>
+                    )}
+                  </motion.button>
+                );
+              })}
             </div>
           )}
         </div>

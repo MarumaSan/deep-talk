@@ -18,6 +18,7 @@ export default function CreateCirclePage() {
   const [category, setCategory] = useState("random-deep");
   const [customCategory, setCustomCategory] = useState("");
   const [maxPeople, setMaxPeople] = useState(4);
+  const [maxRounds, setMaxRounds] = useState(15);
   const [hostName, setHostName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [circleId, setCircleId] = useState("");
@@ -34,6 +35,7 @@ export default function CreateCirclePage() {
       circleName.trim(),
       category,
       maxPeople,
+      maxRounds,
       customCategory.trim()
     );
     if (circle) {
@@ -167,6 +169,33 @@ export default function CreateCirclePage() {
                       }`}
                   >
                     {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Max Rounds */}
+            <div className="mb-8">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                จำนวนข้อที่เล่น
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { value: 5, label: "5 ข้อ" },
+                  { value: 10, label: "10 ข้อ" },
+                  { value: 15, label: "15 ข้อ" },
+                  { value: 0, label: "ไม่จำกัด" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setMaxRounds(option.value)}
+                    disabled={isLoading}
+                    className={`px-2 py-2 rounded-lg text-sm font-medium transition-all ${maxRounds === option.value
+                      ? "bg-purple-500/20 border border-purple-500/50 text-purple-300"
+                      : "bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600"
+                      }`}
+                  >
+                    {option.label}
                   </button>
                 ))}
               </div>

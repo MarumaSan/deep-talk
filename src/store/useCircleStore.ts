@@ -74,6 +74,7 @@ interface CircleStore {
     name: string,
     category: string,
     maxPeople: number,
+    maxRounds: number,
     customCategory?: string
   ) => Promise<Circle | null>;
   joinCircle: (inviteCode: string, user: User) => Promise<Circle | null>;
@@ -118,6 +119,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       name,
       category,
       maxPeople,
+      maxRounds,
       customCategory
     ) => {
       const state = get();
@@ -164,6 +166,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
         rounds: [],
         currentRoundIndex: -1,
         status: "waiting",
+        maxRounds,
       };
 
       // 4. Update the row with the actual state_data
