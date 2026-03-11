@@ -52,6 +52,7 @@ export default function JoinCirclePage() {
       setParticipants(circle.participants.map((p: User) => p.name));
       setStep("name");
     } catch (err) {
+      console.error("Join circle error:", err);
       setError("เกิดข้อผิดพลาดในการตรวจสอบ");
     } finally {
       setIsLoading(false);

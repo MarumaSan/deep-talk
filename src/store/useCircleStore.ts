@@ -12,9 +12,18 @@ import {
 
 function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const randomValues = new Uint32Array(6);
+  if (typeof window !== "undefined" && window.crypto) {
+    window.crypto.getRandomValues(randomValues);
+  } else {
+    // Fallback for SSR
+    for (let i = 0; i < 6; i++) {
+      randomValues[i] = Math.floor(Math.random() * chars.length);
+    }
+  }
   let code = "";
   for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += chars.charAt(randomValues[i] % chars.length);
   }
   return code;
 }
@@ -419,11 +428,4 @@ export const useCircleStore = create<CircleStore>((set, get) => {
   };
 });
 
-// Helper for reactions to avoid duplicated code
-async function subRounds(circle: Circle, roundIndex: number, updatedRound: Round) {
-  const updatedRounds = [...circle.rounds];
-  updatedRounds[roundIndex] = updatedRound;
-  const updatedCircle = { ...circle, rounds: updatedRounds };
-  useCircleStore.setState({ currentCircle: updatedCircle });
-  await updateCircleInDB(updatedCircle);
-}
+

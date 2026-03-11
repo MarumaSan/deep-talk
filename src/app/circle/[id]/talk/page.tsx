@@ -1,9 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCircleStore } from "@/store/useCircleStore";
-import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   MessageCircle,
@@ -26,7 +26,6 @@ type TalkPhase = "playing" | "round-end" | "create-question" | "finished";
 
 export default function TalkModePage() {
   const params = useParams();
-  const router = useRouter();
   const circleId = params.id as string;
 
   const {
@@ -43,7 +42,6 @@ export default function TalkModePage() {
 
   const [phase, setPhase] = useState<TalkPhase>("playing");
   const [userQuestion, setUserQuestion] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
   const [questionSource, setQuestionSource] = useState<"user" | "ai" | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -168,7 +166,6 @@ export default function TalkModePage() {
   };
 
   const handleAIQuestion = async () => {
-    setAiLoading(true);
     try {
       const difficulty = getDifficultyForRound(roundNumber + 1);
       const res = await fetch("/api/generate-question", {
@@ -198,7 +195,6 @@ export default function TalkModePage() {
       // Fallback to random question from pool
       await handleRandomQuestion();
     } finally {
-      setAiLoading(false);
       setQuestionSource(null);
     }
   };

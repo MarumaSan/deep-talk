@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Initialize globally to reuse across requests (Serverless optimization)
+const apiKey = process.env.GEMINI_API_KEY || "";
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : null;
+
 export async function POST(req: NextRequest) {
   try {
     const { category, difficulty } = await req.json();
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    if (!model) {
       return NextResponse.json(
-        { error: "GEMINI_API_KEY is not set" },
+        { error: "GEMINI_API_KEY is not set or invalid" },
         { status: 500 }
       );
     }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const difficultyLabel =
       difficulty <= 1
