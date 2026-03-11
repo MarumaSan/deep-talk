@@ -45,7 +45,6 @@ export interface Circle {
   rounds: Round[];
   currentRoundIndex: number;
   status: "waiting" | "playing" | "finished";
-  maxRounds: number; // 0 for unlimited
 };
 
 export type MoodReaction = "😮" | "❤️" | "🤯" | "😢" | "🔥";

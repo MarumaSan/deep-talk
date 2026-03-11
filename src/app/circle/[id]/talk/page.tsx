@@ -23,6 +23,19 @@ import { getDifficultyForRound } from "@/data/questions";
 
 type TalkPhase = "playing" | "round-end" | "create-question" | "finished";
 
+const getLevelInfo = (count: number) => {
+  if (count <= 2) return { level: 1, min: 0, max: 2 };
+  if (count <= 5) return { level: 2, min: 2, max: 5 };
+  if (count <= 9) return { level: 3, min: 5, max: 9 };
+  if (count <= 14) return { level: 4, min: 9, max: 14 };
+  if (count <= 20) return { level: 5, min: 14, max: 20 };
+  if (count <= 27) return { level: 6, min: 20, max: 27 };
+  if (count <= 35) return { level: 7, min: 27, max: 35 };
+  if (count <= 44) return { level: 8, min: 35, max: 44 };
+  if (count <= 54) return { level: 9, min: 44, max: 54 };
+  return { level: 10, min: 54, max: 54 }; // MAX
+};
+
 export default function TalkModePage() {
   const params = useParams();
   const circleId = params.id as string;
@@ -290,34 +303,16 @@ export default function TalkModePage() {
                 {questionCreator?.name.charAt(0).toUpperCase()}
               </div>
               <h2 className="text-xl font-bold text-white mb-1">
-                {isRoundComplete && currentCircle.maxRounds > 0 && currentCircle.rounds.length >= currentCircle.maxRounds
-                  ? "จบเกมแล้ว!"
-                  : isQuestionCreator
-                    ? "คุณเป็นคนตั้งคำถามถัดไป!"
-                    : `${questionCreator?.name} กำลังตั้งคำถาม...`}
+                {isQuestionCreator
+                  ? "คุณเป็นคนตั้งคำถามถัดไป!"
+                  : `${questionCreator?.name} กำลังตั้งคำถาม...`}
               </h2>
-              {(!isRoundComplete || currentCircle.maxRounds === 0 || currentCircle.rounds.length < currentCircle.maxRounds) && (
-                <p className="text-sm text-gray-500">
-                  Round {roundNumber + 1} • Difficulty: {getDifficultyForRound(roundNumber + 1)}/5
-                </p>
-              )}
+              <p className="text-sm text-gray-500">
+                Round {roundNumber + 1} • Difficulty: {getDifficultyForRound(roundNumber + 1)}/5
+              </p>
             </div>
 
-            {isRoundComplete && currentCircle.maxRounds > 0 && currentCircle.rounds.length >= currentCircle.maxRounds ? (
-              <div className="text-center py-8">
-                <p className="text-white font-medium mb-4">เล่นครบ {currentCircle.maxRounds} ข้อแล้ว!</p>
-                {currentUser.id === currentCircle.hostId ? (
-                  <button
-                    onClick={handleEndGame}
-                    className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                  >
-                    ดูบทสรุป
-                  </button>
-                ) : (
-                  <p className="text-gray-400">รอ Host กดจบเกม...</p>
-                )}
-              </div>
-            ) : isQuestionCreator ? (
+            {isQuestionCreator ? (
               <>
                 {!questionSource ? (
                   <div className="space-y-3">
@@ -434,6 +429,10 @@ export default function TalkModePage() {
 
 
   // ========== MAIN PLAYING PHASE ==========
+  const questionCount = currentCircle?.rounds?.length || 0;
+  const { level, min, max } = getLevelInfo(questionCount);
+  const progressPercent = level === 10 ? 100 : Math.max(0, Math.min(100, ((questionCount - min) / (max - min)) * 100));
+
   return (
     <div className="min-h-screen flex flex-col px-4 py-6 relative">
       {currentUser.id === currentCircle.hostId && (
@@ -462,13 +461,19 @@ export default function TalkModePage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-end">
-          <span className="text-sm font-semibold text-purple-400">
-            ข้อที่ {currentCircle.rounds.length}{currentCircle.maxRounds > 0 ? ` / ${currentCircle.maxRounds}` : ''}
-          </span>
-          <span className="text-xs text-gray-500">
-            {currentCircle.maxRounds > 0 ? 'จำนวนรอบข้อ' : 'เล่นไปเรื่อยๆ'}
-          </span>
+        <div className="flex flex-col flex-1 items-end ml-4">
+          <div className="flex items-center justify-between w-full max-w-[120px] mb-1">
+            <span className="text-sm font-bold text-white">Level {level}</span>
+            <span className="text-xs text-purple-400 font-medium">
+              {level === 10 ? 'MAX' : `${questionCount}/${max}`}
+            </span>
+          </div>
+          <div className="w-full max-w-[120px] h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
       </div>
 
