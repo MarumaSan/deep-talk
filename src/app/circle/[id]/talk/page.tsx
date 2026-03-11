@@ -40,7 +40,6 @@ export default function TalkModePage() {
     endGame,
   } = useCircleStore();
 
-  const [phase, setPhase] = useState<TalkPhase>("playing");
   const [userQuestion, setUserQuestion] = useState("");
   const [questionSource, setQuestionSource] = useState<"user" | "ai" | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,37 +81,37 @@ export default function TalkModePage() {
   }
 
   const currentRound = currentCircle.rounds[currentCircle.currentRoundIndex];
-  if (!currentRound) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-gray-400 mb-4">ยังไม่ได้เริ่มเกม</p>
-          <Link
-            href={`/circle/${circleId}`}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            กลับห้องรอ
-          </Link>
-        </div>
-      </div>
-    );
+
+  // Decide phase based on global state
+  let derivedPhase: TalkPhase = "playing";
+  let isRoundComplete = false;
+
+  if (currentCircle.status === "finished") {
+    derivedPhase = "finished";
+  } else if (!currentRound) {
+    if (currentCircle.status === "playing") derivedPhase = "create-question";
+  } else {
+    isRoundComplete = currentRound.answeredUsers.length >= currentCircle.participants.length;
+    if (isRoundComplete) derivedPhase = "create-question";
   }
+
+  const phase = derivedPhase;
 
   const {
     question,
     answerOrder,
     answeredUsers,
     roundNumber,
-  } = currentRound;
+  } = currentRound || { answerOrder: [], answeredUsers: [], roundNumber: 0, question: null };
 
-  const isRoundComplete = answeredUsers.length === currentCircle.participants.length;
   const currentSpeakerIndex = answeredUsers.length;
   const currentSpeakerId = answerOrder[currentSpeakerIndex];
   const currentSpeaker = currentCircle.participants.find((p: User) => p.id === currentSpeakerId);
 
-  // The first answerer of this round will create next question
-  const questionCreatorId = answerOrder[0];
+  // The creator is the first answerer of the current round. If no round exists, it's the host.
+  const questionCreatorId = currentRound && currentRound.answerOrder.length > 0
+    ? currentRound.answerOrder[0]
+    : currentCircle.hostId;
   const questionCreator = currentCircle.participants.find((p: User) => p.id === questionCreatorId);
   const isQuestionCreator = currentUser.id === questionCreatorId;
 
@@ -122,32 +121,15 @@ export default function TalkModePage() {
   const handleFinishAnswer = async () => {
     if (!currentSpeakerId) return;
     await finishAnswer(currentSpeakerId);
-
-    // Check if round is now complete after this answer
-    const newAnsweredCount = answeredUsers.length + 1;
-    if (newAnsweredCount >= currentCircle.participants.length) {
-      handleNextRound();
-    }
   };
 
   const handleSkip = async () => {
     if (!currentSpeakerId) return;
     await skipUser(currentSpeakerId);
-
-    const newAnsweredCount = answeredUsers.length + 1;
-    if (newAnsweredCount >= currentCircle.participants.length) {
-      handleNextRound();
-    }
   };
 
   const handleReaction = async (emoji: MoodReaction) => {
     await addReaction(currentCircle.currentRoundIndex, emoji);
-  };
-
-  const handleNextRound = () => {
-    setPhase("create-question");
-    setQuestionSource(null);
-    setUserQuestion("");
   };
 
   const handleSubmitUserQuestion = async () => {
@@ -160,7 +142,6 @@ export default function TalkModePage() {
       createdBy: "user",
     };
     await startNewRound(newQuestion);
-    setPhase("playing");
     setUserQuestion("");
     setQuestionSource(null);
   };
@@ -186,7 +167,6 @@ export default function TalkModePage() {
           createdBy: "ai",
         };
         await startNewRound(newQuestion);
-        setPhase("playing");
       } else {
         // Fallback to random
         await handleRandomQuestion();
@@ -203,14 +183,12 @@ export default function TalkModePage() {
     const q = getRandomQuestion();
     if (q) {
       await startNewRound(q);
-      setPhase("playing");
     }
     setQuestionSource(null);
   };
 
   const handleEndGame = async () => {
     await endGame();
-    setPhase("finished");
   };
 
   // ========== RENDER ==========
@@ -472,7 +450,7 @@ export default function TalkModePage() {
       <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full relative z-10 gap-8">
         {/* Question Card */}
         <QuestionCard
-          question={question}
+          question={question!}
           onReaction={handleReaction}
           showReactions={true}
         />

@@ -264,32 +264,12 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const circle = get().currentCircle;
       if (!circle) return;
 
-      const question = get().getRandomQuestion();
-      if (!question) return;
-
-      const answerOrder = shuffleArray(circle.participants.map((p) => p.id));
-      const round: Round = {
-        id: uuidv4(),
-        question,
-        answerOrder,
-        answeredUsers: [],
-        roundNumber: 1,
-        reactions: {},
-      };
-
       const updatedCircle = {
         ...circle,
         status: "playing" as const,
-        rounds: [round],
-        currentRoundIndex: 0,
       };
 
-      // Optimistic update
-      set((s) => ({
-        currentCircle: updatedCircle,
-        usedQuestionIds: [...s.usedQuestionIds, question.id],
-      }));
-
+      set({ currentCircle: updatedCircle });
       await updateCircleInDB(updatedCircle);
     },
 
@@ -297,7 +277,22 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const circle = get().currentCircle;
       if (!circle) return;
 
-      const answerOrder = shuffleArray(circle.participants.map((p) => p.id));
+      const previousRound = circle.rounds[circle.currentRoundIndex];
+      const previousFirstId = previousRound ? previousRound.answerOrder[0] : null;
+
+      let answerOrder = shuffleArray(circle.participants.map((p) => p.id));
+
+      if (circle.rounds.length === 0) {
+        // Round 1: Host MUST be first
+        answerOrder = answerOrder.filter((id) => id !== circle.hostId);
+        answerOrder.unshift(circle.hostId);
+      } else {
+        // Subsequent rounds: MUST NOT be the same as previous round's first person
+        if (answerOrder.length > 1 && answerOrder[0] === previousFirstId) {
+          const first = answerOrder.shift();
+          answerOrder.push(first!);
+        }
+      }
       const roundNumber = circle.rounds.length + 1;
       const round: Round = {
         id: uuidv4(),
