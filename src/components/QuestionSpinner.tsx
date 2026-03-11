@@ -48,7 +48,7 @@ export default function QuestionSpinner({
       <AnimatePresence mode="wait">
         {current ? (
           <motion.div
-            key={current.id + (isSpinning ? "-spin" : "")}
+            key={current.text + (isSpinning ? "-spin" : "")}
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
@@ -66,11 +66,10 @@ export default function QuestionSpinner({
                 {[1, 2, 3, 4, 5].map((level) => (
                   <div
                     key={level}
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      level <= current.difficulty
+                    className={`w-1.5 h-1.5 rounded-full ${level <= current.difficulty
                         ? "bg-purple-400"
                         : "bg-gray-700"
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -93,11 +92,10 @@ export default function QuestionSpinner({
         whileTap={{ scale: 0.95 }}
         onClick={spin}
         disabled={isSpinning}
-        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-          isSpinning
+        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${isSpinning
             ? "bg-gray-700 text-gray-400 cursor-not-allowed"
             : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/25"
-        }`}
+          }`}
       >
         <motion.div
           animate={isSpinning ? { rotate: 360 } : {}}

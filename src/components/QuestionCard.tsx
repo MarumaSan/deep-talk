@@ -33,7 +33,7 @@ export default function QuestionCard({
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={question.id}
+        key={question.text}
         initial={{ rotateY: 90, opacity: 0 }}
         animate={{ rotateY: 0, opacity: 1 }}
         exit={{ rotateY: -90, opacity: 0 }}
@@ -55,8 +55,8 @@ export default function QuestionCard({
                   <div
                     key={level}
                     className={`w-2 h-2 rounded-full ${level <= question.difficulty
-                        ? "bg-purple-400"
-                        : "bg-gray-700"
+                      ? "bg-purple-400"
+                      : "bg-gray-700"
                       }`}
                   />
                 ))}
@@ -101,8 +101,8 @@ export default function QuestionCard({
                     whileTap={{ scale: 0.9 }}
                     onClick={() => handleReaction(emoji)}
                     className={`relative text-2xl transition-all ${selectedReaction === emoji
-                        ? "scale-125 drop-shadow-lg"
-                        : "opacity-60 hover:opacity-100"
+                      ? "scale-125 drop-shadow-lg"
+                      : "opacity-60 hover:opacity-100"
                       }`}
                   >
                     {emoji}

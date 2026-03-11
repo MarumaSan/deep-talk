@@ -16,7 +16,6 @@ export type Category =
   | "other";
 
 export type Question = {
-  id: string;
   text: string;
   category: string;
   difficulty: number; // 1-5
@@ -24,12 +23,11 @@ export type Question = {
 };
 
 export type Round = {
-  id: string;
   question: Question;
   answerOrder: string[]; // user ids
   answeredUsers: string[]; // user ids who finished
   roundNumber: number;
-  reactions: Record<string, string[]>; // questionId -> emoji[]
+  reactions: string[]; // List of emojis for this round
 };
 
 export interface Circle {

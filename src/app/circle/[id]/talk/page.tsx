@@ -149,7 +149,6 @@ export default function TalkModePage() {
     if (!text.endsWith("?")) text += "?";
 
     const newQuestion: Question = {
-      id: `q-${roundNumber + 1}`,
       text,
       category: currentCircle.category,
       difficulty: getDifficultyForRound(roundNumber + 1),
@@ -174,7 +173,6 @@ export default function TalkModePage() {
       const data = await res.json();
       if (data.question) {
         const newQuestion: Question = {
-          id: `q-${roundNumber + 1}`,
           text: data.question,
           category: currentCircle.category,
           difficulty,
@@ -483,10 +481,11 @@ export default function TalkModePage() {
       <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full relative z-10 gap-8">
         {/* Question Card */}
         <QuestionCard
+          key={question!.text}
           question={question!}
           onReaction={handleReaction}
           showReactions={true}
-          reactionsList={currentRound?.reactions?.[question!.id] || []}
+          reactionsList={currentRound?.reactions || []}
         />
 
         {/* Speaker Spotlight */}

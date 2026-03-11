@@ -2,51 +2,51 @@ import { Question } from "@/types";
 
 export const defaultQuestions: Question[] = [
   // Life
-  { id: "q1", text: "ช่วงเวลาไหนในชีวิตที่เปลี่ยนตัวคุณมากที่สุด?", category: "life", difficulty: 1, createdBy: "user" },
-  { id: "q2", text: "ถ้าย้อนเวลากลับไปได้ คุณจะบอกอะไรกับตัวเองตอนอายุ 15?", category: "life", difficulty: 2, createdBy: "user" },
-  { id: "q3", text: "อะไรคือสิ่งที่คุณยังไม่เคยทำ แต่อยากทำก่อนตาย?", category: "life", difficulty: 1, createdBy: "user" },
-  { id: "q4", text: "คุณเคยรู้สึกหลงทางในชีวิตไหม? ตอนนั้นเป็นยังไง?", category: "life", difficulty: 3, createdBy: "user" },
-  { id: "q5", text: "ความสำเร็จที่คุณภูมิใจที่สุด แต่ไม่เคยบอกใคร?", category: "life", difficulty: 2, createdBy: "user" },
+  { text: "ช่วงเวลาไหนในชีวิตที่เปลี่ยนตัวคุณมากที่สุด?", category: "life", difficulty: 1, createdBy: "user" },
+  { text: "ถ้าย้อนเวลากลับไปได้ คุณจะบอกอะไรกับตัวเองตอนอายุ 15?", category: "life", difficulty: 2, createdBy: "user" },
+  { text: "อะไรคือสิ่งที่คุณยังไม่เคยทำ แต่อยากทำก่อนตาย?", category: "life", difficulty: 1, createdBy: "user" },
+  { text: "คุณเคยรู้สึกหลงทางในชีวิตไหม? ตอนนั้นเป็นยังไง?", category: "life", difficulty: 3, createdBy: "user" },
+  { text: "ความสำเร็จที่คุณภูมิใจที่สุด แต่ไม่เคยบอกใคร?", category: "life", difficulty: 2, createdBy: "user" },
 
   // Love / Relationships
-  { id: "q6", text: "คุณเคยมีความรักที่แท้จริงไหม?", category: "love", difficulty: 1, createdBy: "user" },
-  { id: "q7", text: "อะไรคือสิ่งที่คุณเรียนรู้จากความรักที่ผิดหวัง?", category: "love", difficulty: 3, createdBy: "user" },
-  { id: "q8", text: "ความรักแบบไหนที่คุณกลัวที่สุด?", category: "love", difficulty: 4, createdBy: "user" },
-  { id: "q9", text: "คุณเชื่อในเนื้อคู่ไหม? ทำไม?", category: "relationships", difficulty: 2, createdBy: "user" },
-  { id: "q10", text: "ความสัมพันธ์ไหนที่เจ็บปวดที่สุดในชีวิตคุณ?", category: "relationships", difficulty: 4, createdBy: "user" },
-  { id: "q11", text: "คุณเคยเสียใจที่ปล่อยใครบางคนไปไหม?", category: "relationships", difficulty: 3, createdBy: "user" },
+  { text: "คุณเคยมีความรักที่แท้จริงไหม?", category: "love", difficulty: 1, createdBy: "user" },
+  { text: "อะไรคือสิ่งที่คุณเรียนรู้จากความรักที่ผิดหวัง?", category: "love", difficulty: 3, createdBy: "user" },
+  { text: "ความรักแบบไหนที่คุณกลัวที่สุด?", category: "love", difficulty: 4, createdBy: "user" },
+  { text: "คุณเชื่อในเนื้อคู่ไหม? ทำไม?", category: "relationships", difficulty: 2, createdBy: "user" },
+  { text: "ความสัมพันธ์ไหนที่เจ็บปวดที่สุดในชีวิตคุณ?", category: "relationships", difficulty: 4, createdBy: "user" },
+  { text: "คุณเคยเสียใจที่ปล่อยใครบางคนไปไหม?", category: "relationships", difficulty: 3, createdBy: "user" },
 
   // Fear
-  { id: "q12", text: "ความกลัวอะไรที่ควบคุมชีวิตคุณอยู่?", category: "fear", difficulty: 3, createdBy: "user" },
-  { id: "q13", text: "คุณกลัวอะไรมากที่สุดเกี่ยวกับอนาคต?", category: "fear", difficulty: 2, createdBy: "user" },
-  { id: "q14", text: "สิ่งที่คุณกลัวที่สุดแต่ไม่เคยบอกใคร?", category: "fear", difficulty: 5, createdBy: "user" },
-  { id: "q15", text: "ถ้าไม่กลัวอะไรเลย คุณจะทำอะไรเป็นอย่างแรก?", category: "fear", difficulty: 1, createdBy: "user" },
+  { text: "ความกลัวอะไรที่ควบคุมชีวิตคุณอยู่?", category: "fear", difficulty: 3, createdBy: "user" },
+  { text: "คุณกลัวอะไรมากที่สุดเกี่ยวกับอนาคต?", category: "fear", difficulty: 2, createdBy: "user" },
+  { text: "สิ่งที่คุณกลัวที่สุดแต่ไม่เคยบอกใคร?", category: "fear", difficulty: 5, createdBy: "user" },
+  { text: "ถ้าไม่กลัวอะไรเลย คุณจะทำอะไรเป็นอย่างแรก?", category: "fear", difficulty: 1, createdBy: "user" },
 
   // Childhood
-  { id: "q16", text: "ความทรงจำที่ชัดที่สุดจากวัยเด็กคืออะไร?", category: "childhood", difficulty: 1, createdBy: "user" },
-  { id: "q17", text: "มีอะไรจากวัยเด็กที่ยังส่งผลกับคุณถึงทุกวันนี้?", category: "childhood", difficulty: 3, createdBy: "user" },
-  { id: "q18", text: "ตอนเด็กคุณฝันอยากเป็นอะไร? แล้วทำไมถึงเปลี่ยนไป?", category: "childhood", difficulty: 2, createdBy: "user" },
-  { id: "q19", text: "คุณรู้สึกว่าพ่อแม่เข้าใจคุณจริงๆ ไหม?", category: "childhood", difficulty: 4, createdBy: "user" },
+  { text: "ความทรงจำที่ชัดที่สุดจากวัยเด็กคืออะไร?", category: "childhood", difficulty: 1, createdBy: "user" },
+  { text: "มีอะไรจากวัยเด็กที่ยังส่งผลกับคุณถึงทุกวันนี้?", category: "childhood", difficulty: 3, createdBy: "user" },
+  { text: "ตอนเด็กคุณฝันอยากเป็นอะไร? แล้วทำไมถึงเปลี่ยนไป?", category: "childhood", difficulty: 2, createdBy: "user" },
+  { text: "คุณรู้สึกว่าพ่อแม่เข้าใจคุณจริงๆ ไหม?", category: "childhood", difficulty: 4, createdBy: "user" },
 
   // Dreams
-  { id: "q20", text: "ถ้าเงินไม่ใช่ปัญหา คุณจะใช้ชีวิตยังไง?", category: "dreams", difficulty: 1, createdBy: "user" },
-  { id: "q21", text: "ความฝันอะไรที่คุณยอมแพ้ไปแล้ว?", category: "dreams", difficulty: 3, createdBy: "user" },
-  { id: "q22", text: "คุณอยากให้คนจดจำคุณในฐานะอะไร?", category: "dreams", difficulty: 2, createdBy: "user" },
-  { id: "q23", text: "ถ้ามีชีวิตอีกชาติ คุณอยากเกิดเป็นอะไร?", category: "dreams", difficulty: 1, createdBy: "user" },
+  { text: "ถ้าเงินไม่ใช่ปัญหา คุณจะใช้ชีวิตยังไง?", category: "dreams", difficulty: 1, createdBy: "user" },
+  { text: "ความฝันอะไรที่คุณยอมแพ้ไปแล้ว?", category: "dreams", difficulty: 3, createdBy: "user" },
+  { text: "คุณอยากให้คนจดจำคุณในฐานะอะไร?", category: "dreams", difficulty: 2, createdBy: "user" },
+  { text: "ถ้ามีชีวิตอีกชาติ คุณอยากเกิดเป็นอะไร?", category: "dreams", difficulty: 1, createdBy: "user" },
 
   // Philosophy
-  { id: "q24", text: "คุณเชื่อว่าคนเราเลือกชะตาชีวิตของตัวเองได้ไหม?", category: "philosophy", difficulty: 2, createdBy: "user" },
-  { id: "q25", text: "ความตายทำให้ชีวิตมีค่ามากขึ้นหรือเปล่า?", category: "philosophy", difficulty: 4, createdBy: "user" },
-  { id: "q26", text: "อะไรคือความจริงที่คนส่วนใหญ่ไม่กล้ายอมรับ?", category: "philosophy", difficulty: 3, createdBy: "user" },
-  { id: "q27", text: "คุณคิดว่า 'ความสุขที่แท้จริง' คืออะไร?", category: "philosophy", difficulty: 2, createdBy: "user" },
+  { text: "คุณเชื่อว่าคนเราเลือกชะตาชีวิตของตัวเองได้ไหม?", category: "philosophy", difficulty: 2, createdBy: "user" },
+  { text: "ความตายทำให้ชีวิตมีค่ามากขึ้นหรือเปล่า?", category: "philosophy", difficulty: 4, createdBy: "user" },
+  { text: "อะไรคือความจริงที่คนส่วนใหญ่ไม่กล้ายอมรับ?", category: "philosophy", difficulty: 3, createdBy: "user" },
+  { text: "คุณคิดว่า 'ความสุขที่แท้จริง' คืออะไร?", category: "philosophy", difficulty: 2, createdBy: "user" },
 
   // Random Deep
-  { id: "q28", text: "สิ่งที่คุณไม่เคยบอกใครเลย?", category: "random-deep", difficulty: 5, createdBy: "user" },
-  { id: "q29", text: "ถ้าต้องเลือกระหว่างความจริงกับความสุข คุณเลือกอะไร?", category: "random-deep", difficulty: 3, createdBy: "user" },
-  { id: "q30", text: "คุณเคยโกหกตัวเองเรื่องอะไร?", category: "random-deep", difficulty: 4, createdBy: "user" },
-  { id: "q31", text: "ใครคือคนที่มีอิทธิพลต่อชีวิตคุณมากที่สุด? ทำไม?", category: "random-deep", difficulty: 2, createdBy: "user" },
-  { id: "q32", text: "คุณรู้สึกว่าตัวเองเป็นคนดีไหม? จริงๆ แล้ว?", category: "random-deep", difficulty: 4, createdBy: "user" },
-  { id: "q33", text: "ถ้าวันนี้เป็นวันสุดท้ายของชีวิต คุณจะทำอะไร?", category: "random-deep", difficulty: 3, createdBy: "user" },
+  { text: "สิ่งที่คุณไม่เคยบอกใครเลย?", category: "random-deep", difficulty: 5, createdBy: "user" },
+  { text: "ถ้าต้องเลือกระหว่างความจริงกับความสุข คุณเลือกอะไร?", category: "random-deep", difficulty: 3, createdBy: "user" },
+  { text: "คุณเคยโกหกตัวเองเรื่องอะไร?", category: "random-deep", difficulty: 4, createdBy: "user" },
+  { text: "ใครคือคนที่มีอิทธิพลต่อชีวิตคุณมากที่สุด? ทำไม?", category: "random-deep", difficulty: 2, createdBy: "user" },
+  { text: "คุณรู้สึกว่าตัวเองเป็นคนดีไหม? จริงๆ แล้ว?", category: "random-deep", difficulty: 4, createdBy: "user" },
+  { text: "ถ้าวันนี้เป็นวันสุดท้ายของชีวิต คุณจะทำอะไร?", category: "random-deep", difficulty: 3, createdBy: "user" },
 ];
 
 export const categories = [

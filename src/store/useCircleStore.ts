@@ -65,7 +65,7 @@ interface CircleStore {
   // We only keep the CURRENT circle in memory now, loaded from DB
   currentCircle: Circle | null;
   currentUser: User | null;
-  usedQuestionIds: string[];
+  usedQuestions: string[];
   isSyncing: boolean;
 
   setCurrentUser: (user: User) => void;
@@ -105,7 +105,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
   return {
     currentCircle: null,
     currentUser: loadUser(),
-    usedQuestionIds: [],
+    usedQuestions: [],
     isSyncing: false,
 
     setCurrentUser: (user) => {
@@ -285,12 +285,11 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       }
       const roundNumber = circle.roundCount + 1;
       const round: Round = {
-        id: `r-${roundNumber}`,
         question,
         answerOrder,
         answeredUsers: [],
         roundNumber,
-        reactions: {},
+        reactions: [],
       };
 
       const updatedCircle = {
@@ -301,7 +300,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
 
       set((s) => ({
         currentCircle: updatedCircle,
-        usedQuestionIds: [...s.usedQuestionIds, question.id],
+        usedQuestions: [...s.usedQuestions, question.text],
       }));
 
       await updateCircleInDB(updatedCircle);
@@ -331,11 +330,10 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const round = circle.currentRound;
       if (!round) return;
 
-      const qId = round.question.id;
-      const existing = round.reactions[qId] || [];
+      const existing = round.reactions || [];
       const updatedRound = {
         ...round,
-        reactions: { ...round.reactions, [qId]: [...existing, emoji] },
+        reactions: [...existing, emoji],
       };
 
       const updatedCircle = { ...circle, currentRound: updatedRound };
@@ -373,24 +371,24 @@ export const useCircleStore = create<CircleStore>((set, get) => {
     getRandomQuestion: () => {
       const circle = get().currentCircle;
       if (!circle) return null;
-      const usedIds = get().usedQuestionIds;
+      const usedIds = get().usedQuestions;
       const roundNum = circle.roundCount + 1;
       const maxDiff = getDifficultyForRound(roundNum);
 
       let pool = getQuestionsByCategory(circle.category).filter(
-        (q) => !usedIds.includes(q.id) && q.difficulty <= maxDiff
+        (q) => !usedIds.includes(q.text) && q.difficulty <= maxDiff
       );
 
       if (pool.length === 0) {
         pool = defaultQuestions.filter(
-          (q) => !usedIds.includes(q.id) && q.difficulty <= maxDiff
+          (q) => !usedIds.includes(q.text) && q.difficulty <= maxDiff
         );
       }
       if (pool.length === 0) {
-        pool = defaultQuestions.filter((q) => !usedIds.includes(q.id));
+        pool = defaultQuestions.filter((q) => !usedIds.includes(q.text));
       }
       if (pool.length === 0) {
-        set({ usedQuestionIds: [] });
+        set({ usedQuestions: [] });
         pool = defaultQuestions;
       }
 

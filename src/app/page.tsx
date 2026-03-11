@@ -216,7 +216,7 @@ function DeepQuestionPreview() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {previewQuestions.map((q, i) => (
             <motion.div
-              key={q.id}
+              key={q.text}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
