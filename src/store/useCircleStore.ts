@@ -97,7 +97,7 @@ async function updateCircleInDB(circle: Circle) {
   await supabase
     .from("rooms")
     .update({ state_data: circle, updated_at: getBangkokISOString() })
-    .eq("id", circle.id);
+    .eq("invite_code", circle.id);
 }
 
 export const useCircleStore = create<CircleStore>((set, get) => {
@@ -143,7 +143,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
         throw new Error("Failed to create room in database");
       }
 
-      const roomId = String(data.id);
+      const roomId = inviteCode;
 
       // 2. Set user ID to "1" for the host
       const hostUser = { ...state.currentUser, id: "1" };
@@ -212,7 +212,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const { data, error } = await supabase
         .from("rooms")
         .select("state_data")
-        .eq("id", id)
+        .eq("invite_code", id)
         .single();
 
       if (error || !data) return null;
@@ -239,7 +239,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
             event: "UPDATE",
             schema: "public",
             table: "rooms",
-            filter: `id=eq.${id}`,
+            filter: `invite_code=eq.${id}`,
           },
           (payload) => {
             const updatedCircle = payload.new.state_data as Circle;
