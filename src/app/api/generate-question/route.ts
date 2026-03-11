@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+export const maxDuration = 30; // Allow longer execution time on Vercel
+
 // Initialize globally to reuse across requests (Serverless optimization)
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -57,6 +59,7 @@ Rules:
 - It should encourage genuine, honest answers
 - It should be open-ended (not yes/no)
 - Write ONLY the question text in Thai, nothing else
+- The question should be concise and not too long
 - Do not include quotation marks
 - Do not include numbering or bullets
 - The question should be answerable in conversation.
@@ -75,12 +78,12 @@ Depth guideline:
 9 = uncomfortable truth
 10 = confronting, raw, and psychologically deep`;
 
-    // Implement logic to bail out if Gemini takes longer than 9 seconds (Serverless limits often at 10s)
+    // Implement logic to bail out if Gemini takes longer than 30 seconds
     function generateWithTimeout() {
       return Promise.race([
         model!.generateContent(prompt),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("AI generation timed out")), 9000)
+          setTimeout(() => reject(new Error("AI generation timed out (30s)")), 30000)
         ) as Promise<never>
       ]);
     }
