@@ -45,7 +45,6 @@ export interface Circle {
   rounds: Round[];
   currentRoundIndex: number;
   status: "waiting" | "playing" | "finished";
-  timerSeconds: number; // Duration per speaker in seconds
 };
 
-export type MoodReaction = "😮" | "❤️" | "🤯" | "😢" | "🔥" | "🤣" | "😭" | "🤔" | "🥵";
+export type MoodReaction = "😮" | "❤️" | "🤯" | "😢" | "🔥";

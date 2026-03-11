@@ -73,10 +73,9 @@ interface CircleStore {
   createCircle: (
     name: string,
     category: string,
-    customCategory: string | undefined,
     maxPeople: number,
-    timerSeconds: number
-  ) => Promise<Circle>;
+    customCategory?: string
+  ) => Promise<Circle | null>;
   joinCircle: (inviteCode: string, user: User) => Promise<Circle | null>;
   loadCircle: (id: string) => Promise<Circle | null>;
   subscribeToCircle: (id: string) => void;
@@ -118,9 +117,8 @@ export const useCircleStore = create<CircleStore>((set, get) => {
     createCircle: async (
       name,
       category,
-      customCategory,
       maxPeople,
-      timerSeconds
+      customCategory
     ) => {
       const state = get();
       if (!state.currentUser) throw new Error("No user");
@@ -166,7 +164,6 @@ export const useCircleStore = create<CircleStore>((set, get) => {
         rounds: [],
         currentRoundIndex: -1,
         status: "waiting",
-        timerSeconds,
       };
 
       // 4. Update the row with the actual state_data
@@ -280,18 +277,12 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const previousRound = circle.rounds[circle.currentRoundIndex];
       const previousFirstId = previousRound ? previousRound.answerOrder[0] : null;
 
-      let answerOrder = shuffleArray(circle.participants.map((p) => p.id));
+      const answerOrder = shuffleArray(circle.participants.map((p) => p.id));
 
-      if (circle.rounds.length === 0) {
-        // Round 1: Host MUST be first
-        answerOrder = answerOrder.filter((id) => id !== circle.hostId);
-        answerOrder.unshift(circle.hostId);
-      } else {
-        // Subsequent rounds: MUST NOT be the same as previous round's first person
-        if (answerOrder.length > 1 && answerOrder[0] === previousFirstId) {
-          const first = answerOrder.shift();
-          answerOrder.push(first!);
-        }
+      // Subsequent rounds: MUST NOT be the same as previous round's first person
+      if (answerOrder.length > 1 && answerOrder[0] === previousFirstId) {
+        const first = answerOrder.shift();
+        answerOrder.push(first!);
       }
       const roundNumber = circle.rounds.length + 1;
       const round: Round = {

@@ -17,7 +17,6 @@ import {
 import Link from "next/link";
 import QuestionCard from "@/components/QuestionCard";
 import SpeakerSpotlight from "@/components/SpeakerSpotlight";
-import Timer from "@/components/Timer";
 import { MoodReaction, Question, User } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 import { getDifficultyForRound } from "@/data/questions";
@@ -443,7 +442,6 @@ export default function TalkModePage() {
             </p>
           </div>
         </div>
-        <Timer initialSeconds={currentCircle.timerSeconds || 180} />
       </div>
 
       {/* Main content */}
