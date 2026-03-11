@@ -92,7 +92,7 @@ export default function TalkModePage() {
     );
   }
 
-  const currentRound = currentCircle.rounds[currentCircle.currentRoundIndex];
+  const currentRound = currentCircle.currentRound;
 
   // Decide phase based on global state
   let derivedPhase: TalkPhase = "playing";
@@ -141,7 +141,7 @@ export default function TalkModePage() {
   };
 
   const handleReaction = async (emoji: MoodReaction) => {
-    await addReaction(currentCircle.currentRoundIndex, emoji);
+    await addReaction(emoji);
   };
 
   const handleSubmitUserQuestion = async () => {
@@ -220,7 +220,7 @@ export default function TalkModePage() {
             </div>
             <h2 className="text-3xl font-bold text-white mb-2">จบเกม!</h2>
             <p className="text-gray-400 mb-6">
-              วง &quot;{currentCircle.name}&quot; เล่นทั้งหมด {currentCircle.rounds.length} รอบ
+              วง &quot;{currentCircle.name}&quot; เล่นทั้งหมด {currentCircle.roundCount} รอบ
             </p>
 
             {/* Summary */}
@@ -229,7 +229,7 @@ export default function TalkModePage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">จำนวนรอบ</span>
-                  <span className="text-white font-medium">{currentCircle.rounds.length}</span>
+                  <span className="text-white font-medium">{currentCircle.roundCount}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">ผู้เข้าร่วม</span>
@@ -429,7 +429,7 @@ export default function TalkModePage() {
 
 
   // ========== MAIN PLAYING PHASE ==========
-  const questionCount = currentCircle?.rounds?.length || 0;
+  const questionCount = currentCircle?.roundCount || 0;
   const { level, min, max } = getLevelInfo(questionCount);
   const progressPercent = level === 10 ? 100 : Math.max(0, Math.min(100, ((questionCount - min) / (max - min)) * 100));
 
@@ -484,7 +484,7 @@ export default function TalkModePage() {
           question={question!}
           onReaction={handleReaction}
           showReactions={true}
-          reactionsList={currentCircle.rounds[currentCircle.currentRoundIndex]?.reactions?.[question!.id] || []}
+          reactionsList={currentRound?.reactions?.[question!.id] || []}
         />
 
         {/* Speaker Spotlight */}

@@ -42,8 +42,8 @@ export interface Circle {
   maxPeople: number;
   inviteCode: string; // 6-digit code
   createdAt: Date;
-  rounds: Round[];
-  currentRoundIndex: number;
+  currentRound: Round | null;
+  roundCount: number;
   status: "waiting" | "playing" | "finished";
 };
 

@@ -85,7 +85,7 @@ interface CircleStore {
   startGame: () => Promise<void>;
   startNewRound: (question: Question) => Promise<void>;
   finishAnswer: (userId: string) => Promise<void>;
-  addReaction: (roundIndex: number, emoji: MoodReaction) => Promise<void>;
+  addReaction: (emoji: MoodReaction) => Promise<void>;
   skipUser: (userId: string) => Promise<void>;
   removeParticipant: (userId: string) => Promise<void>;
   getRandomQuestion: () => Question | null;
@@ -161,8 +161,8 @@ export const useCircleStore = create<CircleStore>((set, get) => {
         maxPeople,
         inviteCode,
         createdAt: getBangkokISOString() as unknown as Date,
-        rounds: [],
-        currentRoundIndex: -1,
+        currentRound: null,
+        roundCount: 0,
         status: "waiting",
       };
 
@@ -274,7 +274,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const circle = get().currentCircle;
       if (!circle) return;
 
-      const previousRound = circle.rounds[circle.currentRoundIndex];
+      const previousRound = circle.currentRound;
       const previousFirstId = previousRound ? previousRound.answerOrder[0] : null;
 
       const answerOrder = shuffleArray(circle.participants.map((p) => p.id));
@@ -284,7 +284,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
         const first = answerOrder.shift();
         answerOrder.push(first!);
       }
-      const roundNumber = circle.rounds.length + 1;
+      const roundNumber = circle.roundCount + 1;
       const round: Round = {
         id: uuidv4(),
         question,
@@ -296,8 +296,8 @@ export const useCircleStore = create<CircleStore>((set, get) => {
 
       const updatedCircle = {
         ...circle,
-        rounds: [...circle.rounds, round],
-        currentRoundIndex: circle.rounds.length,
+        currentRound: round,
+        roundCount: circle.roundCount + 1,
       };
 
       set((s) => ({
@@ -311,7 +311,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
     finishAnswer: async (userId) => {
       const circle = get().currentCircle;
       if (!circle) return;
-      const round = circle.rounds[circle.currentRoundIndex];
+      const round = circle.currentRound;
       if (!round) return;
       if (round.answeredUsers.includes(userId)) return;
 
@@ -319,19 +319,17 @@ export const useCircleStore = create<CircleStore>((set, get) => {
         ...round,
         answeredUsers: [...round.answeredUsers, userId],
       };
-      const updatedRounds = [...circle.rounds];
-      updatedRounds[circle.currentRoundIndex] = updatedRound;
 
-      const updatedCircle = { ...circle, rounds: updatedRounds };
+      const updatedCircle = { ...circle, currentRound: updatedRound };
 
       set({ currentCircle: updatedCircle });
       await updateCircleInDB(updatedCircle);
     },
 
-    addReaction: async (roundIndex, emoji) => {
+    addReaction: async (emoji) => {
       const circle = get().currentCircle;
       if (!circle) return;
-      const round = circle.rounds[roundIndex];
+      const round = circle.currentRound;
       if (!round) return;
 
       const qId = round.question.id;
@@ -341,10 +339,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
         reactions: { ...round.reactions, [qId]: [...existing, emoji] },
       };
 
-      const updatedRounds = [...circle.rounds];
-      updatedRounds[roundIndex] = updatedRound;
-
-      const updatedCircle = { ...circle, rounds: updatedRounds };
+      const updatedCircle = { ...circle, currentRound: updatedRound };
       set({ currentCircle: updatedCircle });
       await updateCircleInDB(updatedCircle);
     },
@@ -360,15 +355,16 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const updatedParticipants = circle.participants.filter(
         (p) => p.id !== userId
       );
-      const updatedRounds = circle.rounds.map((round) => ({
-        ...round,
-        answerOrder: round.answerOrder.filter((id) => id !== userId),
-      }));
+
+      const updatedRound = circle.currentRound ? {
+        ...circle.currentRound,
+        answerOrder: circle.currentRound.answerOrder.filter((id) => id !== userId),
+      } : null;
 
       const updatedCircle = {
         ...circle,
         participants: updatedParticipants,
-        rounds: updatedRounds,
+        currentRound: updatedRound,
       };
 
       set({ currentCircle: updatedCircle });
@@ -379,7 +375,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       const circle = get().currentCircle;
       if (!circle) return null;
       const usedIds = get().usedQuestionIds;
-      const roundNum = circle.rounds.length + 1;
+      const roundNum = circle.roundCount + 1;
       const maxDiff = getDifficultyForRound(roundNum);
 
       let pool = getQuestionsByCategory(circle.category).filter(
