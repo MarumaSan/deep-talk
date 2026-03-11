@@ -2,7 +2,6 @@
 
 import { create } from "zustand";
 import { Circle, User, Round, Question, MoodReaction } from "@/types";
-import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase";
 import {
   getQuestionsByCategory,
@@ -286,7 +285,7 @@ export const useCircleStore = create<CircleStore>((set, get) => {
       }
       const roundNumber = circle.roundCount + 1;
       const round: Round = {
-        id: uuidv4(),
+        id: `r-${roundNumber}`,
         question,
         answerOrder,
         answeredUsers: [],

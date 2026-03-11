@@ -18,7 +18,6 @@ import Link from "next/link";
 import QuestionCard from "@/components/QuestionCard";
 import SpeakerSpotlight from "@/components/SpeakerSpotlight";
 import { MoodReaction, Question, User } from "@/types";
-import { v4 as uuidv4 } from "uuid";
 import { getDifficultyForRound, getDifficultyLabel } from "@/data/questions";
 
 type TalkPhase = "playing" | "round-end" | "create-question" | "finished";
@@ -150,7 +149,7 @@ export default function TalkModePage() {
     if (!text.endsWith("?")) text += "?";
 
     const newQuestion: Question = {
-      id: uuidv4(),
+      id: `q-${roundNumber + 1}`,
       text,
       category: currentCircle.category,
       difficulty: getDifficultyForRound(roundNumber + 1),
@@ -175,7 +174,7 @@ export default function TalkModePage() {
       const data = await res.json();
       if (data.question) {
         const newQuestion: Question = {
-          id: uuidv4(),
+          id: `q-${roundNumber + 1}`,
           text: data.question,
           category: currentCircle.category,
           difficulty,
