@@ -39,10 +39,16 @@ Rules:
 - It should be open-ended (not yes/no)
 - Write ONLY the question text in Thai, nothing else
 - Do not include quotation marks
-- Do not include numbering or bullets`;
+- Do not include numbering or bullets
+- Always end the question with a question mark (?)`;
 
     const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    let text = result.response.text().trim();
+
+    // Ensure it ends with ?
+    if (text && !text.endsWith("?")) {
+      text += "?";
+    }
 
     return NextResponse.json({ question: text });
   } catch (error) {
