@@ -119,10 +119,8 @@ export default function TalkModePage() {
   const currentSpeakerId = answerOrder[currentSpeakerIndex];
   const currentSpeaker = currentCircle.participants.find((p: User) => p.id === currentSpeakerId);
 
-  // The creator is the first answerer of the current round. If no round exists, it's the host.
-  const questionCreatorId = currentRound && currentRound.answerOrder.length > 0
-    ? currentRound.answerOrder[0]
-    : currentCircle.hostId;
+  // The Host ALWAYS creates the question, per user's request.
+  const questionCreatorId = currentCircle.hostId;
   const questionCreator = currentCircle.participants.find((p: User) => p.id === questionCreatorId);
   const isQuestionCreator = currentUser.id === questionCreatorId;
 
